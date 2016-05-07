@@ -16,6 +16,9 @@ forked from https://bitbucket.org/hikipro/node-chrome-pak/src
 ##settings.ini
 ###the file settings.ini is created for advanced users, make sure you understand everything provided before using it
 ###it can work fine without settings.ini
+##[Leanify](https://github.com/JayXon/Leanify)
+###Leanify is a opensource tool to reduce the size of png files (seems lossless)
+###get leanify [HERE](https://github.com/JayXon/Leanify/releases) and put Leanify.exe together with replace.cmd and it will be automatically used
 #使用说明：
 ###1.下载[node.exe](https://nodejs.org/download/release/latest/);node-chrome-pak.js;replace.cmd;unpack.cmd,放到同一文件夹内
 ###2.找到 chrome_100_percent.pak 复制到上面那个文件夹内
