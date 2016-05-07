@@ -14,7 +14,7 @@ forked from https://bitbucket.org/hikipro/node-chrome-pak/src
 ###run replace.cmd
 ###done
 ##settings.ini
-###the file settings.ini is created for advanced users, make sure yuo understand everything provided before using it
+###the file settings.ini is created for advanced users, make sure you understand everything provided before using it
 ###it can work fine without settings.ini
 #使用说明：
 ###1.下载[node.exe](https://nodejs.org/download/release/latest/);node-chrome-pak.js;replace.cmd;unpack.cmd,放到同一文件夹内
