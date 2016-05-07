@@ -13,7 +13,9 @@ forked from https://bitbucket.org/hikipro/node-chrome-pak/src
 ###check the folder unpacked for files to modify and move the modified file to the folder modified
 ###run replace.cmd
 ###done
-##the file settings.ini is created for advanced users, make sure yuo understand everything provided befors using it
+##settings.ini
+###the file settings.ini is created for advanced users, make sure yuo understand everything provided before using it
+###it can work fine without settings.ini
 #使用说明：
 ###1.下载[node.exe](https://nodejs.org/download/release/latest/);node-chrome-pak.js;replace.cmd;unpack.cmd,放到同一文件夹内
 ###2.找到 chrome_100_percent.pak 复制到上面那个文件夹内
