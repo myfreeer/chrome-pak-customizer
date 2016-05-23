@@ -20,9 +20,9 @@ forked from https://bitbucket.org/hikipro/node-chrome-pak/src
 ###Leanify is a opensource tool to reduce the size of png files (seems lossless)
 ###get leanify [HERE](https://github.com/JayXon/Leanify/releases) and put Leanify.exe together with replace.cmd and it will be automatically used
 #使用说明：
-###1.下载[node.exe](https://nodejs.org/download/release/latest/);node-chrome-pak.js;replace.cmd;unpack.cmd,放到同一文件夹内
+###1.根据系统版本下载完整包解压到同一文件夹内
 ###2.找到 chrome_100_percent.pak 复制到上面那个文件夹内
 ###3.运行unpack.cmd
-###4.在unpacked文件夹内找到想修改的文件，修改后放到modified文件夹内（不要改文件名）
+###4.在unpacked文件夹内找到想修改的文件，修改后放到modified（不要改文件名）
 ###5.运行replace.cmd
 ###6.完成
