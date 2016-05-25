@@ -10,7 +10,7 @@ forked from https://bitbucket.org/hikipro/node-chrome-pak/src
 ###put chrome_100_percent.pak into the folder above
 ###run unpack.cmd
 ##step2
-###check the folder unpacked for files to modify and move the modified file to the folder modified
+###check the folder 'unpacked' for files to modify and move the modified file to the folder 'modified'
 ###run replace.cmd
 ###done
 ##settings.ini
