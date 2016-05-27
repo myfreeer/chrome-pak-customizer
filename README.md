@@ -1,4 +1,4 @@
-# chrome-pak-customizer[![Download](https://img.shields.io/github/downloads/myfreeer/chrome-pak-customizer/total.svg)](https://github.com/myfreeer/chrome-pak-customizer/releases)[![Latest Release](https://img.shields.io/github/release/myfreeer/chrome-pak-customizer.svg)](https://github.com/myfreeer/chrome-pak-customizer/releases/latest) [![GitHub license](https://img.shields.io/github/license/myfreeer/chrome-pak-customizer.svg)](LICENSE)
+# chrome-pak-customizer    [![Download](https://img.shields.io/github/downloads/myfreeer/chrome-pak-customizer/total.svg)](https://github.com/myfreeer/chrome-pak-customizer/releases)    [![Latest Release](https://img.shields.io/github/release/myfreeer/chrome-pak-customizer.svg)](https://github.com/myfreeer/chrome-pak-customizer/releases/latest)    [![GitHub license](https://img.shields.io/github/license/myfreeer/chrome-pak-customizer.svg)](LICENSE)     
 a simple batch tool to customize pak files in chrome or chromium-based browser  
 
 forked from https://bitbucket.org/hikipro/node-chrome-pak/src
