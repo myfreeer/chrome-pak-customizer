@@ -44,10 +44,18 @@ if (process.argv[2] == "pack") {
 function replace_proc(pak_file_path, src_res_id, new_file_path) {
     var pak_buf = fs.readFileSync(pak_file_path);
     var pak_fd = fs.openSync(pak_file_path, "r+");
+    var version = pak_buf.readUInt32LE(0);
+    var res_count = 0, pos = 0;
+    if (version == 4) {
+        res_count = pak_buf.readUInt32LE(0x04);
+        pos = 9;
+    } else if (version == 5) {
+        res_count = pak_buf.readUInt16LE(0x08);
+        pos = 12;
+    } else {
+        return console.log('Error: Unknown pak version');
+    }
     
-    var res_count = pak_buf.readUInt32LE(0x04);
-    
-    var pos = 9;
     
     var res_info = [],
         src_header_idx = 0;
@@ -124,12 +132,19 @@ function unpack_proc(pak_file_path, extract_dst_dir) {
     var pak_buf = fs.readFileSync(pak_file_path);
 
     var dst_dir = (extract_dst_dir ? extract_dst_dir : __dirname + "/extracted/");
-    
-    var ver_number = pak_buf.readUInt32LE(0x00),
-        res_count  = pak_buf.readUInt32LE(0x04),
+    var version = pak_buf.readUInt32LE(0);
+    var res_count = 0, encoding = 0, pos = 0;
+    if (version == 4) {
+        res_count = pak_buf.readUInt32LE(0x04);
         encoding   = pak_buf.readUInt8(0x08);
-    
-    var pos = 9;
+        pos = 9;
+    } else if (version == 5) {
+        res_count = pak_buf.readUInt16LE(0x08);
+        encoding   = pak_buf.readUInt8(0x04);
+        pos = 12;
+    } else {
+        return console.log('Error: Unknown pak version');
+    }
     
     var res_info = [];
     
@@ -138,7 +153,6 @@ function unpack_proc(pak_file_path, extract_dst_dir) {
             id:     pak_buf.readUInt16LE(pos),
             offset: pak_buf.readUInt32LE(pos + 0x02)
         });
-        
         pos += 0x06;
     }
     
@@ -164,7 +178,6 @@ function unpack_proc(pak_file_path, extract_dst_dir) {
                 res_file_name += ".htm";
             }
         }
-        
         if (!fs.existsSync(dst_dir)) { fs.mkdirSync(dst_dir); }
         dst_dir+= "\\";
         fs.writeFileSync(dst_dir + res_file_name, res_buf);
