@@ -156,11 +156,13 @@ function unpack_proc(pak_file_path, extract_dst_dir) {
         var res_file_name = res_info[i].id.toString();
         
         var res_buf = pak_buf.slice(res_info[i].offset, res_info[i].offset + size);
-        if (res_buf.readUInt32BE(0x00) == 0x89504E47) { // ‰PNG
-            res_file_name += ".png";
-        }
-        if (res_buf.readUInt32BE(0x00) == 0x3C21646F || res_buf.readUInt32BE(0x00) == 0x3C68746D) { // ‰HTML
-            res_file_name += ".htm";
+        if (size >= 4 ) {
+            if (res_buf.readUInt32BE(0x00) == 0x89504E47) { // ‰PNG
+                res_file_name += ".png";
+            }
+            if (res_buf.readUInt32BE(0x00) == 0x3C21646F || res_buf.readUInt32BE(0x00) == 0x3C68746D) { // ‰HTML
+                res_file_name += ".htm";
+            }
         }
         
         if (!fs.existsSync(dst_dir)) { fs.mkdirSync(dst_dir); }
