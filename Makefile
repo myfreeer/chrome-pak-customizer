@@ -3,12 +3,12 @@ CFLAGS += -Wall -Wextra -Os -s -flto \
 	-fmerge-all-constants \
 	-Wl,--gc-sections,--build-id=none -pipe
 
-OBJS = main.o pak_header.o pak_file.o pak_file_io.o pak_get_file_type.o
+OBJS_TEST = test.o pak_header.o pak_file.o pak_file_io.o pak_get_file_type.o
 
 all: pakfile
 
-pakfile: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@
+pakfile: $(OBJS_TEST)
+	$(CC) $(CFLAGS) $(OBJS_TEST) -o $@
 
 test: pakfile
 	./pakfile
