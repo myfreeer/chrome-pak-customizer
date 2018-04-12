@@ -20,5 +20,6 @@
 #include "pak_header.h"
 bool pakUnpack(void *buffer, char *outputPath);
 PakFile pakPack(PakFile pakIndex, char *path);
+uint32_t countChar(char *string, uint32_t length, char toCount);
 
 #endif // __PAK_PACKER_UNPACKER_H__

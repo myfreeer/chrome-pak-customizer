@@ -47,6 +47,7 @@ typedef struct PakAlias {
 
 #define PAK_ERROR_UNKNOWN_VER "Error: Unknown pak version."
 #define PAK_ERROR_TRUNCATED "Error: Probably truncated pak file."
+#define PAK_ERROR_BROKEN_INDEX "Error: Probably broken pak index file."
 
 typedef struct MyPakHeader {
     uint32_t version;
