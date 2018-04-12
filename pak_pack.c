@@ -11,7 +11,7 @@ bool pakUnpack(void* buffer, char *outputPath) {
 	char pathBuf[PATH_MAX];
 	memset(pathBuf,0,PATH_MAX);
 	
-	#ifdef WIN32
+	#ifdef _WIN32
 	CreateDirectory(outputPath, NULL);
 	#else
 	mkdir(outputPath, 0777);
@@ -19,8 +19,8 @@ bool pakUnpack(void* buffer, char *outputPath) {
 	char *pakIndexStr = calloc(PAK_BUFFER_BLOCK_SIZE,sizeof(char));
 	uint32_t offset = 0;
 	uint32_t length = PAK_BUFFER_BLOCK_SIZE;
-	offset += sprintf(pakIndexStr + offset, "[Global]\r\nversion=%u\r\n", myHeader.version);
-	offset += sprintf(pakIndexStr + offset, "encoding=%u\r\n\r\n[Resources]\r\n", myHeader.encoding);
+	offset += sprintf(pakIndexStr + offset, PAK_INDEX_GLOBAL_TAG "\r\nversion=%u\r\n", myHeader.version);
+	offset += sprintf(pakIndexStr + offset, "encoding=%u\r\n\r\n" PAK_INDEX_RES_TAG "\r\n", myHeader.encoding);
     for (uint32_t i = 0; i < myHeader.resource_count; i++) {
        itoa(files->id, fileNameBuf, 10);
        sprintf(fileNameBuf,"%u%s", files->id, pakGetFileType(*files));
@@ -35,7 +35,7 @@ bool pakUnpack(void* buffer, char *outputPath) {
     }
 	    PakAlias *aliasBuf=NULL;
     if (myHeader.alias_count > 0) {
-		offset += sprintf(pakIndexStr + offset, "\r\n[Alias]\r\n");
+		offset += sprintf(pakIndexStr + offset, "\r\n" PAK_INDEX_ALIAS_TAG "\r\n");
 		aliasBuf = (PakAlias *) (buffer + myHeader.size + (myHeader.resource_count+1)*PAK_ENTRY_SIZE);
 	}
     for (unsigned int i = 0; i < myHeader.alias_count; i++) {
@@ -65,9 +65,7 @@ uint32_t countChar(char* string, uint32_t length, char toCount) {
 	}
 	return count;
 }
-#define PAK_INDEX_GLOBAL_TAG "[Global]"
-#define PAK_INDEX_RES_TAG "[Resources]"
-#define PAK_INDEX_ALIAS_TAG "[Alias]"
+
 PakFile pakPack(PakFile pakIndex, char* path) { //TODO
 	MyPakHeader myHeader;
 	memset(&myHeader, 0 ,sizeof(myHeader));
@@ -79,8 +77,12 @@ PakFile pakPack(PakFile pakIndex, char* path) { //TODO
 	uint32_t offset = sizeof(PAK_INDEX_GLOBAL_TAG) -1;
 	sscanf(pakIndexBuf + offset, " version=%u%n", &myHeader.version, &count);
 	offset += count;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
 	sscanf(pakIndexBuf + offset, " encoding=%hhu%n", &myHeader.encoding, &count);
-	printf("version=%u\nencoding=%u\n", myHeader.version, myHeader.encoding);
+#pragma GCC diagnostic pop
+//	printf("version=%u\nencoding=%u\n", myHeader.version, myHeader.encoding);
 	if (myHeader.version == 5) {
 		myHeader.size = PAK_HEADER_SIZE_V5;
 	} else if (myHeader.version == 4) {
@@ -101,7 +103,7 @@ PakFile pakPack(PakFile pakIndex, char* path) { //TODO
 	}
 	myHeader.resource_count = countChar(pakEntryIndex, pakAliasIndex-pakEntryIndex, '=');
 	
-	printf("resource_count=%u\nalias_count=%u\n", myHeader.resource_count, myHeader.alias_count);
+	// printf("resource_count=%u\nalias_count=%u\n", myHeader.resource_count, myHeader.alias_count);
 	
 	char fileNameBuf[FILENAME_MAX];
 	memset(fileNameBuf,0,FILENAME_MAX);
@@ -126,7 +128,7 @@ PakFile pakPack(PakFile pakIndex, char* path) { //TODO
 		offset = 0;
 		pakAlias = calloc(myHeader.alias_count, sizeof(PakAlias)); //TODO
 		for (uint32_t i=0;i<myHeader.alias_count;i++) {
-			sscanf(pakAliasIndex + offset, " %u=%u%n ", &pakAlias[i].resource_id, &pakAlias[i].entry_index, &count);//TODO
+			sscanf(pakAliasIndex + offset, " %hu=%hu%n ", &pakAlias[i].resource_id, &pakAlias[i].entry_index, &count);//TODO
 			offset += count;
 		//	printf("resource_id=%hu\tentry_index=%hu\n",pakAlias[i].resource_id, pakAlias[i].entry_index);
 		}

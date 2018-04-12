@@ -69,5 +69,7 @@ typedef struct PakFile {
 // pack/unpack
 #define PAK_BUFFER_BLOCK_SIZE 4096
 #define PAK_BUFFER_MIN_FREE_SIZE 512
-
+#define PAK_INDEX_GLOBAL_TAG "[Global]"
+#define PAK_INDEX_RES_TAG "[Resources]"
+#define PAK_INDEX_ALIAS_TAG "[Alias]"
 #endif // __PAK_DEFINITIONS_H__
