@@ -3,7 +3,7 @@ CFLAGS += -Wall -Wextra -Os -s -flto \
 	-fmerge-all-constants \
 	-Wl,--gc-sections,--build-id=none -pipe
 
-OBJS_TEST = test.o pak_header.o pak_file.o pak_file_io.o pak_get_file_type.o
+OBJS_TEST = test.o pak_header.o pak_file.o pak_file_io.o pak_get_file_type.o pak_pack.o
 
 all: pakfile
 

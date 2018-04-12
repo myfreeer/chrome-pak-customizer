@@ -60,6 +60,10 @@ typedef struct PakFile {
     void* buffer;
 } PakFile;
 
-
+// file-io
 #define NULL_File ((PakFile){0,0,NULL})
 #define freeFile(file) (free(file.buffer))
+
+// pack/unpack
+#define PAK_BUFFER_BLOCK_SIZE 4096
+#define PAK_BUFFER_MIN_FREE_SIZE 512
