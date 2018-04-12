@@ -16,7 +16,9 @@ pak: $(PAK_SOURCES) $(PAK_HEADERS) test.c
 	$(CC) $(CFLAGS) $(PAK_SOURCES) test.c -o $@
 
 clean:
-	-@rm -f pak *.exe *.o
+	-@rm -f pak *.exe *.o test.pak
+	-@rm -f ./unpacked/*
+	-@rm -df ./unpacked
 
 .PHONY: clean all
 .SILENT: clean

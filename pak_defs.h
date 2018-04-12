@@ -1,8 +1,8 @@
 #pragma once
 #ifndef __PAK_DEFINITIONS_H__
 #define __PAK_DEFINITIONS_H__
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #pragma pack(push)
 #pragma pack(1)
@@ -59,11 +59,11 @@ typedef struct MyPakHeader {
 typedef struct PakFile {
     uint16_t id;
     uint32_t size;
-    void* buffer;
+    void *buffer;
 } PakFile;
 
 // file-io
-#define NULL_File ((PakFile){0,0,NULL})
+#define NULL_File ((PakFile){0, 0, NULL})
 #define freeFile(file) (free(file.buffer))
 
 // pack/unpack
