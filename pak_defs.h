@@ -1,4 +1,6 @@
 #pragma once
+#ifndef __PAK_DEFINITIONS_H__
+#define __PAK_DEFINITIONS_H__
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -67,3 +69,5 @@ typedef struct PakFile {
 // pack/unpack
 #define PAK_BUFFER_BLOCK_SIZE 4096
 #define PAK_BUFFER_MIN_FREE_SIZE 512
+
+#endif // __PAK_DEFINITIONS_H__

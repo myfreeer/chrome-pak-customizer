@@ -1,4 +1,7 @@
 #pragma once
+#ifndef __PAK_PACKER_UNPACKER_H__
+#define __PAK_PACKER_UNPACKER_H__
+
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -15,3 +18,5 @@
 #include "pak_file_io.h"
 bool pakUnpack(void* buffer, char *outputPath);
 PakFile pakPack(PakFile pakIndex, char* path);
+
+#endif // __PAK_PACKER_UNPACKER_H__
