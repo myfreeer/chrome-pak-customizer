@@ -5,7 +5,7 @@
 #include "pak_defs.h"
 #include <stdint.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 
 typedef struct FileType {
     char *type;

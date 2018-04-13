@@ -1,6 +1,14 @@
 #pragma once
 #ifndef __PAK_DEFINITIONS_H__
 #define __PAK_DEFINITIONS_H__
+// msvc hacks
+#ifdef _MSC_VER
+#include <windows.h>
+#define ftello ftell
+#define fseeko fseek
+#define PATH_MAX MAX_PATH
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 

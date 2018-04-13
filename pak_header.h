@@ -3,7 +3,7 @@
 #define __PAK_HEADERS_H__
 #include "pak_defs.h"
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
 /**
  * Generate MyPakHeader struct from pak buffer.
