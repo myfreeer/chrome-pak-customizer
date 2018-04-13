@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 2.8)
+project(chrome-pak C)
+set(CMAKE_BUILD_TYPE Release)
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Os -s -pipe -Wall -Wextra -flto -fmerge-all-constants -Wl,--gc-sections,--build-id=none")
+endif()
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} DIR_SRCS)
+add_executable(pak ${DIR_SRCS})
