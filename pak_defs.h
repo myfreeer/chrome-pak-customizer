@@ -39,6 +39,11 @@ typedef struct PakAlias {
 
 #pragma pack(pop)
 
+/**
+ * Get pak version from pak buffer.
+ * @param void *buffer - pointer to pak.
+ * @return uint32_t - pak version.
+ */
 #define pakGetVerison(buffer) (*(uint32_t *)buffer)
 #define PAK_HEADER_SIZE_V4 sizeof(PakHeaderV4)
 #define PAK_HEADER_SIZE_V5 sizeof(PakHeaderV5)

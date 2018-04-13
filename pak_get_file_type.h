@@ -13,9 +13,21 @@ typedef struct FileType {
     uint8_t size;
 } FileType;
 
+/**
+ * Generate a FileType, for internal uses only.
+ * @param char* type - file extension.
+ * @param char* identifer - file header identifer in string.
+ * @see pakGetFileType()
+ * @return FileType
+ */
 #define PAK_GEN_FILE_TYPE(type, identifer) \
     {type, identifer, sizeof(identifer) - 1}
 
+/**
+ * Get file extension form a file, returns "" on failure.
+ * @param PakFile file - the file to parse.
+ * @return char* - pointer to file extension.
+ */
 char *pakGetFileType(PakFile file);
 
 #endif // __PAK_GET_FILE_TYPE_H__
