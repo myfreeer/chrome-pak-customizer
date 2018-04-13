@@ -40,7 +40,7 @@ PakFile pakPackFiles(MyPakHeader *myHeader, PakFile *pakResFile,
 }
 
 PakFile pakGetFile(void *pakBuffer, uint16_t id) {
-    PakFile pakFile;
+    PakFile pakFile = NULL_File;
     MyPakHeader myHeader;
     if (!pakParseHeader(pakBuffer, &myHeader)) {
         return NULL_File;

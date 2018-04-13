@@ -13,6 +13,9 @@ typedef struct FileType {
     uint8_t size;
 } FileType;
 
+#define PAK_GEN_FILE_TYPE(type, identifer) \
+    {type, identifer, sizeof(identifer) - 1}
+
 char *pakGetFileType(PakFile file);
 
 #endif // __PAK_GET_FILE_TYPE_H__

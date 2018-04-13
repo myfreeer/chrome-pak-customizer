@@ -9,7 +9,6 @@ bool pakUnpack(void *buffer, char *outputPath) {
         return false;
     }
 
-    PakFile *filesPtr = files;
     char fileNameBuf[FILENAME_MAX];
     memset(fileNameBuf, 0, FILENAME_MAX);
     char pathBuf[PATH_MAX];
@@ -22,7 +21,7 @@ bool pakUnpack(void *buffer, char *outputPath) {
 #endif
     char *pakIndexStr = calloc(PAK_BUFFER_BLOCK_SIZE, sizeof(char));
     if (pakIndexStr == NULL) {
-        free(filesPtr);
+        free(files);
         return false;
     }
     uint32_t offset = 0;
@@ -34,17 +33,15 @@ bool pakUnpack(void *buffer, char *outputPath) {
                       "encoding=%u\r\n\r\n" PAK_INDEX_RES_TAG "\r\n",
                       myHeader.encoding);
     for (uint32_t i = 0; i < myHeader.resource_count; i++) {
-        itoa(files->id, fileNameBuf, 10);
-        sprintf(fileNameBuf, "%u%s", files->id, pakGetFileType(*files));
+        sprintf(fileNameBuf, "%u%s", files[i].id, pakGetFileType(files[i]));
         offset +=
-            sprintf(pakIndexStr + offset, "%u=%s\r\n", files->id, fileNameBuf);
+            sprintf(pakIndexStr + offset, "%u=%s\r\n", files[i].id, fileNameBuf);
         if (length - offset < PAK_BUFFER_MIN_FREE_SIZE) {
             pakIndexStr = realloc(pakIndexStr, length + PAK_BUFFER_BLOCK_SIZE);
             length += PAK_BUFFER_BLOCK_SIZE;
         }
         sprintf(pathBuf, "%s/%s", outputPath, fileNameBuf);
-        writeFile(pathBuf, *files);
-        files++;
+        writeFile(pathBuf, files[i]);
     }
     PakAlias *aliasBuf = NULL;
     if (myHeader.alias_count > 0) {
@@ -69,7 +66,7 @@ bool pakUnpack(void *buffer, char *outputPath) {
     sprintf(pathBuf, "%s/pak_index.ini",outputPath);
     writeFile(pathBuf, pakIndexBuf);
     freeFile(pakIndexBuf);
-    free(filesPtr);
+    free(files);
     return true;
 }
 
