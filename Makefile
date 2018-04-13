@@ -8,15 +8,16 @@ PAK_HEADERS = pak_header.h pak_file.h pak_file_io.h pak_get_file_type.h pak_pack
 
 all: pak
 
-test: pak
-	./pak
-	cmp chrome_100_percent.pak test.pak
+test: clean pak
+	./pak -u test.pak unpacked
+	./pak -p unpacked/pak_index.ini result.pak
+	cmp test.pak result.pak
 
-pak: $(PAK_SOURCES) $(PAK_HEADERS) test.c
-	$(CC) $(CFLAGS) $(PAK_SOURCES) test.c -o $@
+pak: $(PAK_SOURCES) $(PAK_HEADERS) main.c
+	$(CC) $(CFLAGS) $(PAK_SOURCES) main.c -o $@
 
 clean:
-	-@rm -f pak *.exe *.o test.pak
+	-@rm -f pak *.exe *.o result.pak
 	-@rm -f ./unpacked/*
 	-@rm -df ./unpacked
 

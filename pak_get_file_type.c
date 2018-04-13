@@ -1,14 +1,13 @@
 #include "pak_get_file_type.h"
 
 static const FileType FILE_TYPES[] = {
-	PAK_GEN_FILE_TYPE(".png", "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"),
-	PAK_GEN_FILE_TYPE(".html", "<!doctype html>"),
-	PAK_GEN_FILE_TYPE(".html", "<html>"),
-	PAK_GEN_FILE_TYPE(".html", "<link"),
-	PAK_GEN_FILE_TYPE(".js", "// "),
-	PAK_GEN_FILE_TYPE(".css", "/*"),
-	PAK_GEN_FILE_TYPE(".json", "{")
-};
+    PAK_GEN_FILE_TYPE(".png", "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"),
+    PAK_GEN_FILE_TYPE(".html", "<!doctype html>"),
+    PAK_GEN_FILE_TYPE(".html", "<html>"),
+    PAK_GEN_FILE_TYPE(".html", "<link"),
+    PAK_GEN_FILE_TYPE(".js", "// "),
+    PAK_GEN_FILE_TYPE(".css", "/*"),
+    PAK_GEN_FILE_TYPE(".json", "{")};
 
 static const unsigned int FILE_TYPE_COUNT =
     sizeof(FILE_TYPES) / sizeof(FileType);
