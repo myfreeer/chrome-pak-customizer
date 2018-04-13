@@ -1,0 +1,8 @@
+version: 0.0-{build}
+skip_tags: true
+build_script:
+- cmd: >-
+    appveyor.bat
+on_failure:
+- 7z a -mx9 fail.7z *.exe *.sln *.txt *.log
+- appveyor PushArtifact fail.7z
