@@ -55,4 +55,14 @@ dkms.conf
 *.pak
 
 # pak unpacked files
-unpacked/*
+tests/*
+
+# builds
+build_*/*
+
+# codeblocks
+bin/*
+obj/*
+*.cbp
+*.depend
+*.layout

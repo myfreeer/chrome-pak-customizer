@@ -4,5 +4,11 @@ build_script:
 - cmd: >-
     appveyor.bat
 on_failure:
-- 7z a -mx9 fail.7z *.exe *.sln *.txt *.log
-- appveyor PushArtifact fail.7z
+- 7z a -mx9 -r fail.7z *.exe *.sln *.txt *.log
+- appveyor.exe PushArtifact fail.7z
+artifacts:
+- path: pak_mingw64.exe
+- path: pak_mingw32.exe
+cache:
+  - C:\msys64\var\cache\pacman\pkg
+  - tests

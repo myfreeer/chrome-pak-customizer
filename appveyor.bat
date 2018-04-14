@@ -1,20 +1,21 @@
-mkdir build_mingw64
-cd build_mingw64
+echo Syncing msys2 packages...
+C:\msys64\usr\bin\pacman -Sq --noconfirm --needed --noprogressbar --ask=20 mingw-w64-x86_64-ninja mingw-w64-i686-ninja
+C:\msys64\usr\bin\pacman -Scq --noconfirm
+
+echo Fetching test files
+if not exist tests mkdir tests
+cd tests
+for %%i in (test_v4_474896_1.pak test_v4_474896_2.pak test_v4_474896_r.pak test_v5_550886_1.pak test_v5_550886_2.pak test_v5_550886_r.pak) do if not exist "%%~i" appveyor.exe DownloadFile "https://github.com/myfreeer/chrome-pak-customizer/releases/download/1.0/%%~i"
+cd ..
+
+echo Building and testing 64-bit version...
 set MSYSTEM=MINGW64
-C:\msys64\usr\bin\pacman -S --noconfirm --needed --ask=20 mingw-w64-x86_64-ninja
-C:\msys64\usr\bin\bash -lc "cd \"$APPVEYOR_BUILD_FOLDER\build_mingw64\" && exec cmake -GNinja .."
-C:\msys64\usr\bin\bash -lc "cd \"$APPVEYOR_BUILD_FOLDER\build_mingw64\" && exec ninja"
-move /Y pak.exe ../pak_mingw64.exe
-cd ..
+call C:\msys64\usr\bin\bash -lc "cd \"$APPVEYOR_BUILD_FOLDER\" && exec ./test.sh"
+move /Y .\build_x86_64-w64-mingw32\pak.exe .\pak_mingw64.exe
 
-mkdir build_mingw32
-cd build_mingw32
+echo Building and testing 32-bit version...
 set MSYSTEM=MINGW32
-C:\msys64\usr\bin\pacman -S --noconfirm --needed --ask=20 mingw-w64-i686-ninja
-C:\msys64\usr\bin\bash -lc "cd \"$APPVEYOR_BUILD_FOLDER\build_mingw32\" && exec cmake -GNinja .."
-C:\msys64\usr\bin\bash -lc "cd \"$APPVEYOR_BUILD_FOLDER\build_mingw32\" && exec ninja"
-move /Y pak.exe ../pak_mingw32.exe
-cd ..
+call C:\msys64\usr\bin\bash -lc "cd \"$APPVEYOR_BUILD_FOLDER\" && exec ./test.sh"
+move /Y .\build_i686-w64-mingw32\pak.exe .\pak_mingw32.exe
 
-appveyor.exe PushArtifact pak_mingw64.exe
-appveyor.exe PushArtifact pak_mingw32.exe
+echo Done.
