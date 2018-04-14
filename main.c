@@ -1,3 +1,6 @@
+#if defined(_WIN32) && defined(_LGPL)
+#include "main.h"
+#endif
 #include "pak_defs.h"
 #include "pak_file.h"
 #include "pak_file_io.h"
