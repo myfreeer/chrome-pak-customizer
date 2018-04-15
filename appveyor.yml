@@ -1,4 +1,4 @@
-version: 0.0-{build}
+version: 2.0-{build}
 skip_tags: true
 build_script:
 - cmd: >-
@@ -11,5 +11,6 @@ test: off
 artifacts:
 - path: pak_mingw64.exe
 - path: pak_mingw32.exe
+- path: chrome-pak.7z
 cache:
   - tests

@@ -18,4 +18,6 @@ set MSYSTEM=MINGW32
 call C:\msys64\usr\bin\bash -lc "cd \"$APPVEYOR_BUILD_FOLDER\" && exec ./test.sh"
 move /Y .\build_i686-w64-mingw32\pak.exe .\pak_mingw32.exe
 
+echo Packaging...
+7z a -mx9 chrome-pak.7z .\pak_mingw64.exe .\pak_mingw32.exe .\pack.bat .\unpack.bat
 echo Done.
