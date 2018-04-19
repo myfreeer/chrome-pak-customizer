@@ -16,7 +16,7 @@ char *pakGetFileType(PakFile file) {
     for (unsigned int i = 0; i < FILE_TYPE_COUNT; i++)
         if (file.size > FILE_TYPES[i].size &&
             memcmp(file.buffer, FILE_TYPES[i].identifer, FILE_TYPES[i].size) ==
-                0)
+            0)
             return FILE_TYPES[i].type;
     return "";
 }

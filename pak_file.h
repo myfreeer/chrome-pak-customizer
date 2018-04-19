@@ -26,7 +26,7 @@ PakFile pakPackFiles(MyPakHeader *myHeader, PakFile *pakResFile,
  * @param uint16_t *id - target file id.
  * @return PakFile - the target file.
  */
-PakFile pakGetFile(void *pakBuffer, uint16_t id);
+PakFile pakGetFile(uint8_t *pakBuffer, uint16_t id);
 
 /**
  * Get all files from pak, returns NULL on failure.
@@ -34,6 +34,6 @@ PakFile pakGetFile(void *pakBuffer, uint16_t id);
  * @param void* buffer - pointer to pak.
  * @return PakFile* - pointer to all files in pak.
  */
-PakFile *pakGetFiles(void *buffer);
+PakFile *pakGetFiles(uint8_t *buffer);
 
 #endif // __PAK_FILE_H__

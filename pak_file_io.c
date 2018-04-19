@@ -10,7 +10,7 @@ PakFile readFile(const char *fileName) {
 
     /* Get the number of bytes */
     fseeko(filePtr, 0, SEEK_END);
-    file.size = ftello(filePtr);
+    file.size = (uint32_t) ftello(filePtr);
 
     /* reset the file position indicator to
     the beginning of the file */
@@ -18,18 +18,16 @@ PakFile readFile(const char *fileName) {
 
     /* grab sufficient memory for the
     buffer to hold the text */
-    file.buffer = calloc(file.size + 1, sizeof(char));
+    file.buffer = calloc(file.size + 1, sizeof(uint8_t));
 
     /* memory error */
     if (file.buffer == NULL)
         return NULL_File;
 
     /* copy all the text into the buffer */
-    fread(file.buffer, sizeof(char), file.size, filePtr);
+    fread(file.buffer, sizeof(uint8_t), file.size, filePtr);
     fclose(filePtr);
 
-    /* free the memory we used for the buffer */
-    // free(buffer);
     return file;
 }
 
@@ -37,7 +35,7 @@ bool writeFile(const char *fileName, const PakFile file) {
     FILE *filePtr = fopen(fileName, "wb");
     if (filePtr == NULL)
         return false;
-    const size_t result = fwrite(file.buffer, sizeof(char), file.size, filePtr);
+    const size_t result = fwrite(file.buffer, sizeof(uint8_t), file.size, filePtr);
     fclose(filePtr);
     return (result == file.size);
 }

@@ -1,5 +1,5 @@
 #include "pak_pack.h"
-bool pakUnpack(void *buffer, char *outputPath) {
+bool pakUnpack(uint8_t *buffer, char *outputPath) {
     MyPakHeader myHeader;
     if (!pakParseHeader(buffer, &myHeader)) {
         return false;
@@ -19,7 +19,7 @@ bool pakUnpack(void *buffer, char *outputPath) {
 #else
     mkdir(outputPath, 0777);
 #endif
-    char *pakIndexStr = calloc(PAK_BUFFER_BLOCK_SIZE, sizeof(char));
+    char *pakIndexStr = calloc(PAK_BUFFER_BLOCK_SIZE, sizeof(uint8_t));
     if (pakIndexStr == NULL) {
         free(files);
         return false;
@@ -87,8 +87,7 @@ PakFile pakPack(PakFile pakIndex, char *path) { // TODO
     PakFile pakFile = NULL_File;
     PakFile *resFiles = NULL;
     PakAlias *pakAlias = NULL;
-    // if (!sscanf(pakIndexBuf, "version=%u", &myHeader.version))
-    //	return NULL_File;
+
     uint32_t count = 0;
     uint32_t offset = sizeof(PAK_INDEX_GLOBAL_TAG) - 1;
     sscanf(pakIndexBuf + offset, " version=%u%n", &myHeader.version, &count);
@@ -122,7 +121,7 @@ PakFile pakPack(PakFile pakIndex, char *path) { // TODO
     } else {
         pakAliasIndex += sizeof(PAK_INDEX_ALIAS_TAG) - 1;
         myHeader.alias_count =
-            countChar(pakAliasIndex, pakIndexEnd - pakAliasIndex, '=');
+                (uint16_t) countChar(pakAliasIndex, pakIndexEnd - pakAliasIndex, '=');
     }
     myHeader.resource_count =
         countChar(pakEntryIndex, pakAliasIndex - pakEntryIndex, '=');
@@ -138,7 +137,7 @@ PakFile pakPack(PakFile pakIndex, char *path) { // TODO
     if (resFiles == NULL) {
         goto PAK_PACK_END;
     }
-    // uint32_t totalFileSize = 0;
+
     offset = 0;
     for (uint32_t i = 0; i < myHeader.resource_count; i++) {
         uint32_t id = 0;
@@ -155,8 +154,7 @@ PakFile pakPack(PakFile pakIndex, char *path) { // TODO
             myHeader.resource_count = i;
             goto PAK_PACK_END;
         }
-        resFiles[i].id = id;
-        // totalFileSize += resFiles[i].size;
+        resFiles[i].id = (uint16_t) id;
         //	printf("id=%u\tfile_name=%s\tpath=%s\tsize=%u\n",id,
         // fileNameBuf, pathBuf, resFiles[i].size);
     }

@@ -27,6 +27,6 @@ unsigned int pakWriteHeader(MyPakHeader *myHeader, void *buffer);
  * @param unsigned int size - pak buffer size in bytes.
  * @return bool - succeed or not.
  */
-bool pakCheckFormat(void *buffer, unsigned int size);
+bool pakCheckFormat(uint8_t *buffer, unsigned int size);
 
 #endif // __PAK_HEADERS_H__

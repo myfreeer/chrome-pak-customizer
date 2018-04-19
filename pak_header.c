@@ -28,7 +28,7 @@ unsigned int pakWriteHeader(MyPakHeader *myHeader, void *buffer) {
     if (myHeader->version == 5) {
         PakHeaderV5 *header = (PakHeaderV5 *)buffer;
         header->version = myHeader->version;
-        header->resource_count = myHeader->resource_count;
+        header->resource_count = (uint16_t) myHeader->resource_count;
         header->encoding = myHeader->encoding;
         header->alias_count = myHeader->alias_count;
     } else if (myHeader->version == 4) {
@@ -43,7 +43,7 @@ unsigned int pakWriteHeader(MyPakHeader *myHeader, void *buffer) {
     return myHeader->size;
 }
 
-bool pakCheckFormat(void *buffer, unsigned int size) {
+bool pakCheckFormat(uint8_t *buffer, unsigned int size) {
     MyPakHeader myHeader;
     if (!pakParseHeader(buffer, &myHeader)) {
         return false;

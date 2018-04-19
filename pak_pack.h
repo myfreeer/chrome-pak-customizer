@@ -25,7 +25,7 @@
  * @param char *outputPath - target path.
  * @return bool - succeed or not.
  */
-bool pakUnpack(void *buffer, char *outputPath);
+bool pakUnpack(uint8_t *buffer, char *outputPath);
 
 /**
  * Pack a pak file from target index (ini) file,

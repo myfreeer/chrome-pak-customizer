@@ -1,7 +1,7 @@
 #include "pak_file.h"
 PakFile pakPackFiles(MyPakHeader *myHeader, PakFile *pakResFile,
                      PakAlias *pakAlias) {
-    void *buffer = NULL;
+    uint8_t *buffer = NULL;
     uint32_t size = myHeader->size;
     uint32_t entrySize = (myHeader->resource_count + 1) * PAK_ENTRY_SIZE;
     uint32_t aliasSize = myHeader->alias_count * PAK_ALIAS_SIZE;
@@ -9,7 +9,7 @@ PakFile pakPackFiles(MyPakHeader *myHeader, PakFile *pakResFile,
     for (uint32_t i = 0; i < myHeader->resource_count; i++) {
         size += (pakResFile + i)->size;
     }
-    buffer = calloc(size, sizeof(char));
+    buffer = calloc(size, sizeof(uint8_t));
     if (buffer == NULL)
         return NULL_File;
     uint32_t offset = pakWriteHeader(myHeader, buffer);
@@ -19,7 +19,7 @@ PakFile pakPackFiles(MyPakHeader *myHeader, PakFile *pakResFile,
     }
 
     PakEntry *enrtyPtr = (PakEntry *)(buffer + offset);
-    void *filePtr = buffer + offset + entrySize + aliasSize;
+    uint8_t *filePtr = buffer + offset + entrySize + aliasSize;
     for (uint32_t i = 0; i < myHeader->resource_count; i++) {
         memcpy(filePtr, pakResFile->buffer, pakResFile->size);
         enrtyPtr->resource_id = pakResFile->id;
@@ -39,7 +39,7 @@ PakFile pakPackFiles(MyPakHeader *myHeader, PakFile *pakResFile,
     return pakFile;
 }
 
-PakFile pakGetFile(void *pakBuffer, uint16_t id) {
+PakFile pakGetFile(uint8_t *pakBuffer, uint16_t id) {
     PakFile pakFile = NULL_File;
     MyPakHeader myHeader;
     if (!pakParseHeader(pakBuffer, &myHeader)) {
@@ -70,7 +70,7 @@ PakFile pakGetFile(void *pakBuffer, uint16_t id) {
     return NULL_File;
 }
 
-PakFile *pakGetFiles(void *buffer) {
+PakFile *pakGetFiles(uint8_t *buffer) {
     PakFile *pakResFile = NULL;
     MyPakHeader myHeader;
     if (!pakParseHeader(buffer, &myHeader)) {
