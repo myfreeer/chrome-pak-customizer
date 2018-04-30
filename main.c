@@ -64,7 +64,7 @@ int pakPackIndexFile(char *indexPath, char *outputFilePath) {
         index = strrchr(indexPath, '/');
     }
     if (index != NULL) {
-        filesPath = calloc(index - indexPath + 2, sizeof(uint8_t));
+        filesPath = calloc(index - indexPath + 2, sizeof(char));
         if (filesPath == NULL) {
             returnCode = 5;
             goto PAK_PACK_INDEX_END;
@@ -85,7 +85,7 @@ int pakPackIndexFile(char *indexPath, char *outputFilePath) {
     }
 
     // workaround outputFilePath="" after pakPack()
-    outputFilePath2 = calloc(strlen(outputFilePath) + 1, sizeof(uint8_t));
+    outputFilePath2 = calloc(strlen(outputFilePath) + 1, sizeof(char));
     if (pakIndexFile.buffer == NULL) {
         returnCode = 7;
         goto PAK_PACK_INDEX_END;

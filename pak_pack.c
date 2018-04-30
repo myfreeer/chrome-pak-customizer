@@ -19,7 +19,7 @@ bool pakUnpack(uint8_t *buffer, char *outputPath) {
 #else
     mkdir(outputPath, 0777);
 #endif
-    char *pakIndexStr = calloc(PAK_BUFFER_BLOCK_SIZE, sizeof(uint8_t));
+    char *pakIndexStr = calloc(PAK_BUFFER_BLOCK_SIZE, sizeof(char));
     if (pakIndexStr == NULL) {
         free(files);
         return false;

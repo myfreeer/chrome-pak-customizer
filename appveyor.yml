@@ -11,6 +11,9 @@ test: off
 artifacts:
 - path: pak_mingw64.exe
 - path: pak_mingw32.exe
+- path: pak_msvc64.exe
+- path: pak_msvc32.exe
 - path: chrome-pak.7z
+- path: chrome-pak_msvc.7z
 cache:
   - tests
