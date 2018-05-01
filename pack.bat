@@ -5,7 +5,7 @@ pushd "%~dp0"
 set core_x64=pak_mingw64.exe
 if not exist "%core_x64%" if exist pak_msvc64.exe set core_x64=pak_msvc64.exe
 set core_x86=pak_mingw32.exe
-if not exist "%core_x86%" if exist pak_msvc32.exe set core_x64=pak_msvc32.exe
+if not exist "%core_x86%" if exist pak_msvc32.exe set core_x86=pak_msvc32.exe
 set "WORK_DIR=%~dp0"
 set "file=%~1"
 set "pack_file=%~dpn1_packed.pak"
