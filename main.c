@@ -18,11 +18,21 @@
 
 void printHelp() {
     // get self path
-    char selfName[MAX_PATH];
-    GetModuleFileName(NULL, selfName, MAX_PATH);
-
+    char selfName[PATH_MAX];
+#ifdef _WIN32
+    GetModuleFileName(NULL, selfName, PATH_MAX);
     // get file name from path
     const char *ptr = strrchr(selfName, '\\');
+#else
+    int ret = readlink("/proc/self/exe", selfName, sizeof(selfName) - 1);
+    if (ret == -1)
+        strcpy(selfName, "pak");
+    else
+        selfName[ret] = 0;
+    // get file name from path
+    const char *ptr = strrchr(selfName, '/');
+#endif
+
     if (ptr != NULL)
         strcpy(selfName, ptr + 1);
 

@@ -8,6 +8,11 @@
 #define fseeko fseek
 #define PATH_MAX MAX_PATH
 #endif
+// linux header
+#ifdef __linux__
+#include <linux/limits.h>
+#include <unistd.h>
+#endif
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -63,16 +68,16 @@ typedef struct PakAlias {
 #define PAK_ERROR_BROKEN_INDEX "Error: Probably broken pak index file."
 
 typedef struct MyPakHeader {
-    uint_fast32_t version;
-    uint_fast32_t resource_count;
-    uint_fast16_t alias_count;
-    uint_fast8_t encoding;
-    uint_fast8_t size;
+    uint32_t version;
+    uint32_t resource_count;
+    uint16_t alias_count;
+    uint8_t encoding;
+    uint8_t size;
 } MyPakHeader;
 
 typedef struct PakFile {
-    uint_fast16_t id;
-    uint_fast32_t size;
+    uint16_t id;
+    uint32_t size;
     void *buffer;
 } PakFile;
 
