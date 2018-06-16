@@ -1,7 +1,6 @@
 #pragma once
 #ifndef __PAK_GET_FILE_TYPE_H__
 #define __PAK_GET_FILE_TYPE_H__
-#pragma once
 #include "pak_defs.h"
 #include <stdint.h>
 #include <stdlib.h>
