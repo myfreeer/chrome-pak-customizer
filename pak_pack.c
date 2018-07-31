@@ -60,7 +60,7 @@ bool pakUnpack(uint8_t *buffer, char *outputPath) {
         }
     }
     PakFile pakIndexBuf;
-    // printf(pakIndexStr);
+    // puts(pakIndexStr);
     pakIndexBuf.buffer = pakIndexStr;
     pakIndexBuf.size = offset;
     sprintf(pathBuf, "%s/pak_index.ini", outputPath);
@@ -108,7 +108,7 @@ PakFile pakPack(PakFile pakIndex, char *path) { // TODO
     } else if (myHeader.version == 4) {
         myHeader.size = PAK_HEADER_SIZE_V4;
     } else {
-        printf(PAK_ERROR_UNKNOWN_VER);
+        puts(PAK_ERROR_UNKNOWN_VER);
         goto PAK_PACK_END;
     }
     char *pakIndexEnd = pakIndexBuf + pakIndex.size - 1;
@@ -143,14 +143,14 @@ PakFile pakPack(PakFile pakIndex, char *path) { // TODO
         uint32_t id = 0;
         sscanf(pakEntryIndex + offset, " %u=%s%n ", &id, fileNameBuf, &count);
         if (count == 0 || sprintf(pathBuf, "%s%s", path, fileNameBuf) == 0) {
-            printf(PAK_ERROR_BROKEN_INDEX);
+            puts(PAK_ERROR_BROKEN_INDEX);
             myHeader.resource_count = i;
             goto PAK_PACK_END;
         }
         offset += count;
         resFiles[i] = readFile(pathBuf);
         if (resFiles[i].buffer == NULL) {
-            printf(PAK_ERROR_BROKEN_INDEX);
+            puts(PAK_ERROR_BROKEN_INDEX);
             myHeader.resource_count = i;
             goto PAK_PACK_END;
         }
@@ -168,7 +168,7 @@ PakFile pakPack(PakFile pakIndex, char *path) { // TODO
             sscanf(pakAliasIndex + offset, " %hu=%hu%n ",
                    &pakAlias[i].resource_id, &pakAlias[i].entry_index, &count);
             if (count == 0) {
-                printf(PAK_ERROR_BROKEN_INDEX);
+                puts(PAK_ERROR_BROKEN_INDEX);
                 goto PAK_PACK_END;
             }
             offset += count;

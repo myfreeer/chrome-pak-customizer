@@ -16,7 +16,7 @@ bool pakParseHeader(void *buffer, MyPakHeader *myHeader) {
         myHeader->alias_count = 0;
         myHeader->size = PAK_HEADER_SIZE_V4;
     } else {
-        printf(PAK_ERROR_UNKNOWN_VER);
+        puts(PAK_ERROR_UNKNOWN_VER);
         return false;
     }
     return true;
@@ -37,7 +37,7 @@ unsigned int pakWriteHeader(MyPakHeader *myHeader, void *buffer) {
         header->resource_count = myHeader->resource_count;
         header->encoding = myHeader->encoding;
     } else {
-        printf(PAK_ERROR_UNKNOWN_VER);
+        puts(PAK_ERROR_UNKNOWN_VER);
         return 0;
     }
     return myHeader->size;
@@ -50,14 +50,14 @@ bool pakCheckFormat(uint8_t *buffer, unsigned int size) {
     }
     if (size < myHeader.size + (myHeader.resource_count + 1) * PAK_ENTRY_SIZE +
                    myHeader.alias_count * PAK_ALIAS_SIZE) {
-        printf(PAK_ERROR_TRUNCATED);
+        puts(PAK_ERROR_TRUNCATED);
         return false;
     }
     PakEntry *entryPtr = (PakEntry *)(buffer + myHeader.size);
     for (unsigned int i = 0; i <= myHeader.resource_count; i++) {
         uint32_t offset = entryPtr->offset;
         if (size < offset) {
-            printf(PAK_ERROR_TRUNCATED);
+            puts(PAK_ERROR_TRUNCATED);
             return false;
         }
         entryPtr++;
