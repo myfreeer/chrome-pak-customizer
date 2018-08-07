@@ -17,3 +17,9 @@ artifacts:
 - path: chrome-pak_msvc.7z
 cache:
   - tests
+skip_commits:
+  files:
+    - 'LICENSE'
+    - '*.md'
+    - '.gitingore'
+    - '.gitattributes'
