@@ -10,11 +10,12 @@
 
 #define HELP_TEXT                                                              \
     "Pack/Unpack chrome pak file.\n\n"                                         \
-    "%s -u pak_file target_path\n"                                             \
-    "Unpack chrome pak file at pak_file to target_path.\n\n"                   \
-    "%s -p pak_index_file target_pak_file\n"                                   \
-    "Pack chrome pak file using pak_index_file to target_pak_file.\n"          \
-    "pak_index_file would be found in unpacked path.\n"
+    "%s -u pak_file destination_path\n"                                        \
+    "Unpack chrome pak file at pak_file to destination_path.\n\n"              \
+    "%s -p pak_index_file destination_pak_file\n"                              \
+    "Pack chrome pak file using pak_index_file to destination_pak_file.\n"     \
+    "pak_index_file would be found in unpacked path.\n"                        \
+    "\nNote: existing destination files would be overwritten\n"
 
 void printHelp() {
     // get self path
