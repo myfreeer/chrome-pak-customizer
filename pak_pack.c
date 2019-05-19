@@ -11,7 +11,7 @@ bool pakUnpack(uint8_t *buffer, char *outputPath) {
 
     char fileNameBuf[FILENAME_MAX];
     memset(fileNameBuf, 0, FILENAME_MAX);
-    char pathBuf[PATH_MAX];
+    char pathBuf[PATH_MAX + 2];
     memset(pathBuf, 0, PATH_MAX);
 
 #ifdef _WIN32
@@ -70,7 +70,7 @@ bool pakUnpack(uint8_t *buffer, char *outputPath) {
     return true;
 }
 
-uint32_t countChar(char *string, uint32_t length, char toCount) {
+uint32_t countChar(const char *string, uint32_t length, char toCount) {
     uint32_t count = 0;
     for (uint32_t i = 0; i < length; i++) {
         if (string[i] == toCount)

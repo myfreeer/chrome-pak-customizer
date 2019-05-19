@@ -169,7 +169,7 @@ LPSTR WINAPI *CommandLineToArgvA(LPCSTR lpCmdline, int *numargs) {
   if (!*s) {
     /* There are no parameters so we are all done */
     argv[argc] = NULL;
-    *numargs = argc;
+    *numargs = (int) argc;
     return argv;
   }
 
@@ -228,7 +228,7 @@ LPSTR WINAPI *CommandLineToArgvA(LPCSTR lpCmdline, int *numargs) {
   }
   *d = '\0';
   argv[argc] = NULL;
-  *numargs = argc;
+  *numargs = (int) argc;
 
   return argv;
 }

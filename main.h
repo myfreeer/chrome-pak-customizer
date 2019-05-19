@@ -25,7 +25,7 @@ int __cdecl mainCRTStartup() {
   const int exitCode = main(__arg_c, __arg_v);
 #endif
   LocalFree(__arg_v);
-  ExitProcess(exitCode);
+  ExitProcess((UINT) exitCode);
   return exitCode;
 }
 #endif

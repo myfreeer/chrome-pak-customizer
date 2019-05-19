@@ -57,7 +57,7 @@ typedef struct PakAlias {
  * @param void *buffer - pointer to pak.
  * @return uint32_t - pak version.
  */
-#define pakGetVerison(buffer) (*(uint32_t *)buffer)
+#define pakGetVerison(buffer) (*(uint32_t *)(buffer))
 #define PAK_HEADER_SIZE_V4 sizeof(PakHeaderV4)
 #define PAK_HEADER_SIZE_V5 sizeof(PakHeaderV5)
 #define PAK_ENTRY_SIZE sizeof(PakEntry)
@@ -83,7 +83,7 @@ typedef struct PakFile {
 
 // file-io
 #define NULL_File ((PakFile){0, 0, NULL})
-#define freeFile(file) (free(file.buffer))
+#define freeFile(file) (free((file).buffer))
 
 // pack/unpack
 #define PAK_BUFFER_BLOCK_SIZE 4096

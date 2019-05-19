@@ -74,7 +74,7 @@ int pakPackIndexFile(char *indexPath, char *outputFilePath) {
     if (index == NULL) {
         index = strrchr(indexPath, '/');
     }
-    if (index != NULL) {
+    if (index != NULL && index > indexPath) {
         filesPath = calloc(index - indexPath + 2, sizeof(char));
         if (filesPath == NULL) {
             returnCode = 5;
@@ -86,8 +86,6 @@ int pakPackIndexFile(char *indexPath, char *outputFilePath) {
         filesPath = "";
     }
 
-    strncpy(filesPath, indexPath, index - indexPath + 1);
-
     pakIndexFile = readFile(indexPath);
     if (pakIndexFile.buffer == NULL) {
         printf("Error: cannot read file %s", indexPath);
@@ -97,7 +95,7 @@ int pakPackIndexFile(char *indexPath, char *outputFilePath) {
 
     // workaround outputFilePath="" after pakPack()
     outputFilePath2 = calloc(strlen(outputFilePath) + 1, sizeof(char));
-    if (pakIndexFile.buffer == NULL) {
+    if (outputFilePath2 == NULL) {
         returnCode = 7;
         goto PAK_PACK_INDEX_END;
     }

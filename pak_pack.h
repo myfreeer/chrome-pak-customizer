@@ -44,6 +44,6 @@ PakFile pakPack(PakFile pakIndex, char *path);
  * @param char toCount - specified char to count.
  * @return uint32_t - number of specified char.
  */
-uint32_t countChar(char *string, uint32_t length, char toCount);
+uint32_t countChar(const char *string, uint32_t length, char toCount);
 
 #endif // __PAK_PACKER_UNPACKER_H__
