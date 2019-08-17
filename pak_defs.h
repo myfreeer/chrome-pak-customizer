@@ -13,6 +13,11 @@
 #include <linux/limits.h>
 #include <unistd.h>
 #endif
+// macOS headers
+#ifdef __APPLE__
+#include <sys/syslimits.h>
+#include <unistd.h>
+#endif
 
 #include <stdbool.h>
 #include <stdint.h>
