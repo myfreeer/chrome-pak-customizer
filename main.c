@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
     memset(path1, 0, PATH_MAX);
     char path2[PATH_MAX];
     memset(path2, 0, PATH_MAX);
-    for (int i = 0; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         char *arg = argv[i];
         bool isConfig = false;
         if (*arg != '\0' && (*arg == '/' || *arg == '-')) {
