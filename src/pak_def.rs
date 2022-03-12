@@ -9,7 +9,6 @@ use crate::pak_error::PakError;
 
 pub trait PakBase {
     fn from_buf(buf: &[u8]) -> Result<&Self, PakError> where Self: Sized;
-    #[inline]
     fn as_bytes(&self) -> &[u8];
     fn new() -> Self where Self: Sized;
 }
@@ -59,8 +58,10 @@ fn from_buf_offset<T: Sized>(buf: &[u8], offset: usize) -> Result<&T, PakError> 
         return Err(PakError::PakEntryOrAliasSizeNotEnough(
             remaining_size, required_size));
     }
-    let p: * mut T = buf.as_ptr() as * mut T;
-    Ok(unsafe { &*(p) })
+    Ok(unsafe {
+        let p: * mut T = buf.as_ptr().add(offset) as * mut T;
+        &*(p)
+    })
 }
 
 impl PakBaseOffset for PakEntry {

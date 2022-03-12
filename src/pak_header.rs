@@ -8,21 +8,13 @@ use crate::pak_def::{PakBase, serialize};
 use crate::pak_error::PakError;
 
 pub trait PakHeader : PakBase {
-    #[inline]
     fn read_version(&self) -> u32;
-    #[inline]
     fn write_version(&mut self, version: u32);
-    #[inline]
     fn read_encoding(&self) -> u8;
-    #[inline]
     fn write_encoding(&mut self, encoding: u8);
-    #[inline]
     fn read_resource_count(&self) -> u32;
-    #[inline]
     fn write_resource_count(&mut self, resource_count: u32);
-    #[inline]
     fn read_alias_count(&self) -> u16;
-    #[inline]
     fn write_alias_count(&mut self, alias_count: u16);
 }
 
