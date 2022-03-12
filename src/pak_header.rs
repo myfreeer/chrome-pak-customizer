@@ -115,6 +115,7 @@ impl PakHeader for PakHeaderV5 {
 }
 
 impl Default for PakHeaderV5 {
+    #[inline]
     fn default() -> Self {
         PakHeaderV5::new()
     }
@@ -192,7 +193,7 @@ impl PakHeader for PakHeaderV4 {
 
     #[inline]
     fn read_alias_count(&self) -> u16 {
-        unimplemented!("Not supported")
+        0
     }
 
     #[inline]
@@ -207,6 +208,7 @@ impl PakHeader for PakHeaderV4 {
 }
 
 impl Default for PakHeaderV4 {
+    #[inline]
     fn default() -> Self {
         PakHeaderV4::new()
     }

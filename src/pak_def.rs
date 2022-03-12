@@ -94,3 +94,25 @@ impl PakBaseOffset for PakAlias {
         from_buf_offset(buf, offset)
     }
 }
+
+pub fn read_pak_alias_slice(buf: &[u8], offset: usize, alias_count: u16)
+                            -> Result<&[PakAlias], PakError> {
+    // no resource is bad, no alias is ok
+    if alias_count == 0 {
+        return Ok(&[]);
+    }
+    let len = buf.len();
+    if len < offset {
+        return Err(PakError::PakAliasOffsetOverflow(len, offset));
+    }
+    let remaining_size = len - offset;
+    let required_size = size_of::<PakAlias>() * (alias_count as usize);
+    if remaining_size < required_size {
+        return Err(PakError::PakAliasSizeNotEnough(
+            remaining_size, required_size));
+    }
+    Ok(unsafe {
+        let p: *mut PakAlias = buf.as_ptr().add(offset) as *mut PakAlias;
+        std::slice::from_raw_parts(p, alias_count as usize)
+    })
+}

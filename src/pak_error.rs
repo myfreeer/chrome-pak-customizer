@@ -17,5 +17,9 @@ pub enum PakError {
     // actual, expected
     PakEntryOrAliasSizeNotEnough(usize, usize),
     PakZeroResourceCount,
-    PakWriteFileFail(Error)
+    PakWriteFileFail(Error),
+    // buffer length, offset
+    PakAliasOffsetOverflow(usize, usize),
+    // actual, expected
+    PakAliasSizeNotEnough(usize, usize),
 }
