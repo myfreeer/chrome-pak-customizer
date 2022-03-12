@@ -14,4 +14,5 @@ pub enum PakError {
     PakEntryOrAliasOffsetOverflow(usize, usize),
     // actual, expected
     PakEntryOrAliasSizeNotEnough(usize, usize),
+    PakZeroResourceCount,
 }

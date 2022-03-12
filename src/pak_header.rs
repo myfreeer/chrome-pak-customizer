@@ -16,6 +16,7 @@ pub trait PakHeader : PakBase {
     fn write_resource_count(&mut self, resource_count: u32);
     fn read_alias_count(&self) -> u16;
     fn write_alias_count(&mut self, alias_count: u16);
+    fn size(&self) -> usize;
 }
 
 const PAK_VERSION_SIZE: usize = size_of::<u32>();
@@ -108,6 +109,11 @@ impl PakHeader for PakHeaderV5 {
     fn write_alias_count(&mut self, alias_count: u16) {
         self.alias_count = alias_count
     }
+
+    #[inline]
+    fn size(&self) -> usize {
+        size_of::<PakHeaderV5>()
+    }
 }
 
 impl Default for PakHeaderV5 {
@@ -194,6 +200,11 @@ impl PakHeader for PakHeaderV4 {
     #[inline]
     fn write_alias_count(&mut self, _alias_count: u16) {
         unimplemented!("Not supported")
+    }
+
+    #[inline]
+    fn size(&self) -> usize {
+        size_of::<PakHeaderV4>()
     }
 }
 
