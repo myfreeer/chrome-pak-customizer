@@ -1,3 +1,5 @@
+use std::io::Error;
+
 pub enum PakError {
     Unknown,
     // actual, expected
@@ -15,4 +17,5 @@ pub enum PakError {
     // actual, expected
     PakEntryOrAliasSizeNotEnough(usize, usize),
     PakZeroResourceCount,
+    PakWriteFileFail(Error)
 }
