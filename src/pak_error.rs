@@ -11,7 +11,7 @@ pub enum PakError {
     // actual, expected
     V5HeaderSizeNotEnough(usize, usize),
     // buffer length, offset
-    PakEntryOffsetOverflow(usize, usize),
+    PakEntryOrAliasOffsetOverflow(usize, usize),
     // actual, expected
-    PakEntrySizeNotEnough(usize, usize),
+    PakEntryOrAliasSizeNotEnough(usize, usize),
 }

@@ -1,6 +1,6 @@
 #![allow(unaligned_references)]
 
-use std::mem::size_of;
+use std::mem::{size_of, transmute};
 
 use byteorder::ByteOrder;
 
@@ -26,7 +26,7 @@ pub trait PakHeader : PakBase {
     fn write_alias_count(&mut self, alias_count: u16);
 }
 
-const PAK_VERSION_SIZE: usize = 4;
+const PAK_VERSION_SIZE: usize = size_of::<u32>();
 const PAK_VERSION_V5: u32 = 5;
 const PAK_VERSION_V4: u32 = 4;
 
@@ -36,23 +36,22 @@ const PAK_VERSION_V4: u32 = 4;
 #[repr(packed(1))]
 #[derive(Debug)]
 pub struct PakHeaderV5 {
-    version: u32,
-    encoding: u8,
-    _padding: [u8; 3],
-    resource_count: u16,
-    alias_count: u16,
+    pub version: u32,
+    pub encoding: u8,
+    pub  _padding: [u8; 3],
+    pub resource_count: u16,
+    pub alias_count: u16,
 }
 
 impl PakBase for PakHeaderV5 {
-    fn from_buf(buf: &[u8]) -> Result<PakHeaderV5, PakError> {
+    fn from_buf(buf: &[u8]) -> Result<&PakHeaderV5, PakError> {
         if buf.len() < size_of::<PakHeaderV5>() {
             return Err(PakError::V5HeaderSizeNotEnough(
                 buf.len(), size_of::<PakHeaderV5>(),
             ));
         }
-        let header: PakHeaderV5 = unsafe {
-            std::ptr::read(buf.as_ptr() as *const _)
-        };
+        let p: * mut PakHeaderV5 = buf.as_ptr() as * mut PakHeaderV5;
+        let header: &PakHeaderV5 = unsafe { &*p };
         if header.version != PAK_VERSION_V5 {
             return Err(PakError::VersionMisMatch(
                 header.version, PAK_VERSION_V5));
@@ -129,20 +128,19 @@ impl Default for PakHeaderV5 {
 #[repr(packed(1))]
 #[derive(Debug)]
 pub struct PakHeaderV4 {
-    version: u32,
-    resource_count: u32,
-    encoding: u8,
+    pub version: u32,
+    pub resource_count: u32,
+    pub encoding: u8,
 }
 
 impl PakBase for PakHeaderV4 {
-    fn from_buf(buf: &[u8]) -> Result<PakHeaderV4, PakError> {
+    fn from_buf(buf: &[u8]) -> Result<&PakHeaderV4, PakError> {
         if buf.len() < size_of::<PakHeaderV4>() {
             return Err(PakError::V4HeaderSizeNotEnough(
                 buf.len(), size_of::<PakHeaderV4>()));
         }
-        let header: PakHeaderV4 = unsafe {
-            std::ptr::read(buf.as_ptr() as *const _)
-        };
+        let p: * mut PakHeaderV4 = buf.as_ptr() as * mut PakHeaderV4;
+        let header: &PakHeaderV4 = unsafe { &*p };
         if header.version != PAK_VERSION_V4 {
             return Err(PakError::VersionMisMatch(
                 header.version, PAK_VERSION_V4));
@@ -218,24 +216,24 @@ pub fn pak_get_version(buf: &[u8]) -> Result<u32, PakError> {
         return Err(PakError::VersionSizeNotEnough(
             buf.len(), PAK_VERSION_SIZE));
     }
-    Ok(byteorder::LittleEndian::read_u32(buf))
+    Ok(u32::from_le_bytes(buf[..4].try_into().unwrap()))
 }
 
-pub fn pak_read_header(buf: &[u8]) -> Result<Box<dyn PakHeader>, PakError> {
+pub fn pak_read_header(buf: &[u8]) -> Result<& dyn PakHeader, PakError> {
     let result = pak_get_version(buf);
     match result {
         Ok(version) => match version {
             PAK_VERSION_V5 => {
                 let result = PakHeaderV5::from_buf(buf);
                 match result {
-                    Ok(header) => Ok(Box::new(header)),
+                    Ok(header) => Ok((header)),
                     Err(err) => Err(err)
                 }
             }
             PAK_VERSION_V4 => {
                 let result = PakHeaderV4::from_buf(buf);
                 match result {
-                    Ok(header) => Ok(Box::new(header)),
+                    Ok(header) => Ok((header)),
                     Err(err) => Err(err)
                 }
             }
