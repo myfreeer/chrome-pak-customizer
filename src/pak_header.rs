@@ -1,8 +1,6 @@
 #![allow(unaligned_references)]
 
-use std::mem::{size_of, transmute};
-
-use byteorder::ByteOrder;
+use std::mem::size_of;
 
 use crate::pak_def::{PakBase, serialize};
 use crate::pak_error::PakError;

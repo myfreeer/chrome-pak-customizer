@@ -2,9 +2,6 @@
 
 use std::mem::size_of;
 
-use byteorder::ByteOrder;
-use type_layout::TypeLayout;
-
 use crate::pak_error::PakError;
 
 pub trait PakBase {
@@ -59,7 +56,7 @@ fn from_buf_offset<T: Sized>(buf: &[u8], offset: usize) -> Result<&T, PakError> 
             remaining_size, required_size));
     }
     Ok(unsafe {
-        let p: * mut T = buf.as_ptr().add(offset) as * mut T;
+        let p: *mut T = buf.as_ptr().add(offset) as *mut T;
         &*(p)
     })
 }
