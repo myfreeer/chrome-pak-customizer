@@ -227,14 +227,14 @@ pub fn pak_read_header(buf: &[u8]) -> Result<& dyn PakHeader, PakError> {
             PAK_VERSION_V5 => {
                 let result = PakHeaderV5::from_buf(buf);
                 match result {
-                    Ok(header) => Ok((header)),
+                    Ok(header) => Ok(header),
                     Err(err) => Err(err)
                 }
             }
             PAK_VERSION_V4 => {
                 let result = PakHeaderV4::from_buf(buf);
                 match result {
-                    Ok(header) => Ok((header)),
+                    Ok(header) => Ok(header),
                     Err(err) => Err(err)
                 }
             }
