@@ -113,9 +113,9 @@ pub static PAK_FILE_TYPES: [PakFileType; 17] = [
 ];
 
 pub fn pak_get_file_type(buf: &[u8]) -> &PakFileType {
-    for x in PAK_FILE_TYPES {
+    for x in &PAK_FILE_TYPES {
         if x.starts_with(buf) {
-            return &x;
+            return x;
         }
     }
     &PAK_FILE_TYPE_UNKNOWN
