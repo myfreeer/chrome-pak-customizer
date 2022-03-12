@@ -1,11 +1,7 @@
-use type_layout::TypeLayout;
-
-use crate::pak_def::PakHeaderV5;
-
 mod pak_def;
 mod pak_error;
+mod pak_header;
 
 fn main() {
     println!("Hello, world!");
-    println!("PakHeaderV5: {}", PakHeaderV5::type_layout())
 }
