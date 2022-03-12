@@ -4,10 +4,14 @@ pub enum PakError {
     VersionSizeNotEnough(usize, usize),
     // version
     UnsupportedVersion(u32),
-    // expected, actual
+    // actual, expected
     VersionMisMatch(u32, u32),
-    // expected, actual
+    // actual, expected
     V4HeaderSizeNotEnough(usize, usize),
-    // expected, actual
-    V5HeaderSizeNotEnough(usize, usize)
+    // actual, expected
+    V5HeaderSizeNotEnough(usize, usize),
+    // buffer length, offset
+    PakEntryOffsetOverflow(usize, usize),
+    // actual, expected
+    PakEntrySizeNotEnough(usize, usize),
 }
