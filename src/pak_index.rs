@@ -1,5 +1,6 @@
 #![allow(unaligned_references)]
 
+use std::path::Path;
 use std::str::FromStr;
 
 use ini_core::Item;
@@ -8,10 +9,45 @@ use crate::pak_def::{PakAlias, PakBase};
 use crate::pak_error::PakError;
 use crate::pak_header::{PAK_VERSION_V4, PAK_VERSION_V5, PakHeader, PakHeaderV4, PakHeaderV5};
 
-// TODO: compression
+pub enum PakIndexCompression {
+    Raw,
+    BrotliCompressed,
+}
+
+pub const PAK_INDEX_BROTLI_COMPRESSED: &str = ":::BrotliCompressed";
+pub const PAK_INDEX_RAW: &str = ":::Raw";
+
+impl PakIndexCompression {
+    fn to_suffix(&self) -> &str {
+        match self {
+            PakIndexCompression::Raw => PAK_INDEX_RAW,
+            PakIndexCompression::BrotliCompressed => PAK_INDEX_BROTLI_COMPRESSED
+        }
+    }
+
+    fn strip_suffix(file_name: &mut String) {
+        if file_name.ends_with(PAK_INDEX_RAW) {
+            file_name.truncate(
+                file_name.len() - PAK_INDEX_RAW.len())
+        } else if file_name.ends_with(PAK_INDEX_BROTLI_COMPRESSED) {
+            file_name.truncate(
+                file_name.len() - PAK_INDEX_BROTLI_COMPRESSED.len())
+        }
+    }
+
+    fn of_file_name(file_name: &str) -> PakIndexCompression {
+        if file_name.ends_with(PAK_INDEX_BROTLI_COMPRESSED) {
+            PakIndexCompression::BrotliCompressed
+        } else {
+            PakIndexCompression::Raw
+        }
+    }
+}
+
 pub struct PakIndexEntry {
     pub resource_id: u16,
     pub file_name: String,
+    pub compression: PakIndexCompression
 }
 
 pub struct PakIndexRef<'a> {
@@ -19,6 +55,14 @@ pub struct PakIndexRef<'a> {
     pub entry_slice: &'a [PakIndexEntry],
     pub alias_slice: &'a [PakAlias],
 }
+
+pub const PAK_INDEX_GLOBAL_TAG: &str = "Global";
+pub const PAK_INDEX_RES_TAG: &str = "Resources";
+pub const PAK_INDEX_ALIAS_TAG: &str = "Alias";
+pub const PAK_INDEX_GLOBAL_VERSION: &str = "version";
+pub const PAK_INDEX_GLOBAL_ENCODING: &str = "encoding";
+pub const PAK_INDEX_TAG_END: &str = "]\r\n";
+pub const PAK_INDEX_CRLF: &str = "\r\n";
 
 static NUMBER_DECIMAL_U16: [u16; 5] = [
     10, 100, 1000, 10000, u16::MAX
@@ -35,14 +79,6 @@ fn number_digit_count_u16(num: u16) -> usize {
     count
 }
 
-pub const PAK_INDEX_GLOBAL_TAG: &str = "Global";
-pub const PAK_INDEX_RES_TAG: &str = "Resources";
-pub const PAK_INDEX_ALIAS_TAG: &str = "Alias";
-pub const PAK_INDEX_GLOBAL_VERSION: &str = "version";
-pub const PAK_INDEX_GLOBAL_ENCODING: &str = "encoding";
-pub const PAK_INDEX_TAG_END: &str = "]\r\n";
-pub const PAK_INDEX_CRLF: &str = "\r\n";
-
 #[derive(Clone, Copy, Debug)]
 pub enum PakIndexStatus {
     Init,
@@ -51,7 +87,6 @@ pub enum PakIndexStatus {
     Alias,
 }
 
-// TODO: pak index <-> pak header + buf
 impl PakIndexRef<'_> {
     fn calc_ini_byte_size(&self) -> usize {
         // 12: []\r\n * 2 + \r\n\r\n
@@ -69,6 +104,9 @@ impl PakIndexRef<'_> {
             // 3: =\r\n
             buf_size += number_digit_count_u16(entry.resource_id) + 3;
             buf_size += entry.file_name.len();
+            if matches!(entry.compression, PakIndexCompression::BrotliCompressed) {
+                buf_size += PAK_INDEX_BROTLI_COMPRESSED.len();
+            }
         }
         for alias in self.alias_slice {
             // 3: =\r\n
@@ -107,6 +145,9 @@ impl PakIndexRef<'_> {
             vec.extend_from_slice(entry.resource_id.to_string().as_bytes());
             vec.push('=' as u8);
             vec.extend_from_slice(entry.file_name.as_bytes());
+            if matches!(entry.compression, PakIndexCompression::BrotliCompressed) {
+                vec.extend_from_slice(entry.compression.to_suffix().as_bytes());
+            }
             vec.extend_from_slice(PAK_INDEX_CRLF.as_bytes());
         }
 
@@ -232,8 +273,15 @@ impl PakIndex {
                                     String::from(key), err));
                             }
                         };
-                        let file_name: String = String::from(value);
-                        entry_vec.push(PakIndexEntry { resource_id, file_name });
+                        let mut file_name: String = String::from(value);
+                        let compression =
+                            PakIndexCompression::of_file_name(&file_name);
+                        PakIndexCompression::strip_suffix(&mut file_name);
+                        entry_vec.push(PakIndexEntry {
+                            resource_id,
+                            file_name,
+                            compression
+                        });
                     }
                     PakIndexStatus::Alias => {
                         if version == PAK_VERSION_V4 {

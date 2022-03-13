@@ -13,6 +13,7 @@ mod pak_index;
 mod pak_unpack;
 mod pak_pack;
 mod pak_args;
+mod pak_brotli;
 
 fn print_help(args: &PakArgs) {
     let default_name = String::from("pak");
@@ -29,6 +30,7 @@ fn print_help(args: &PakArgs) {
 fn main() {
     let args = parse_args();
     // TODO: output status
+    // TODO: allow warnings
     match args.command {
         PakCommand::Unknown | PakCommand::Help => print_help(&args),
         PakCommand::Pack => {

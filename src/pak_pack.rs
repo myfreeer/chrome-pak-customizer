@@ -5,7 +5,7 @@ use std::path::Path;
 
 use crate::pak_def::{PakAlias, PakBase, PakEntry};
 use crate::pak_error::PakError;
-use crate::pak_error::PakError::{PakReadIndexFileFail, PakWriteFileFail};
+use crate::pak_error::PakError::{PakPackWriteFileError, PakReadIndexFileFail};
 use crate::pak_file_io::pak_read_files;
 use crate::PakIndex;
 
@@ -27,7 +27,7 @@ pub fn pak_pack_index_path(index_path_str: String, output_path: String)
     };
     match write(Path::new(&output_path), packed) {
         Ok(_) => Ok(()),
-        Err(err) => Err(PakWriteFileFail(output_path, err))
+        Err(err) => Err(PakPackWriteFileError(output_path, err))
     }
 }
 

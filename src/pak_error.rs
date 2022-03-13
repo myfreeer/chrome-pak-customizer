@@ -33,8 +33,6 @@ pub enum PakError {
     PakIndexUnknownTag(String),
     // status, key, value
     PakIndexUnknownProperty(PakIndexStatus, String, String),
-    // status, key, value
-    PakIndexInvalidProperty(PakIndexStatus, String, String),
     // version str, err
     PakIndexBadVersion(String, ParseIntError),
     PakIndexBadResourceId(String, ParseIntError),

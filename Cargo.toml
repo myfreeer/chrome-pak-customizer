@@ -1,12 +1,13 @@
 [package]
 name = "chrome-pak-customizer"
-version = "0.1.0"
+version = "3.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 ini_core = "0.1.0"
+brotli-decompressor = "2"
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.

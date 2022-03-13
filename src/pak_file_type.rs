@@ -1,9 +1,25 @@
 use crate::pak_error::PakError;
+use crate::pak_index::PakIndexCompression;
 
+#[derive(Copy, Clone)]
 pub enum PakFileCompression {
     None,
     Gzip,
     ChromiumBrotli,
+}
+
+impl Into<PakIndexCompression> for PakFileCompression {
+    #[inline]
+    fn into(self) -> PakIndexCompression {
+        match self {
+            PakFileCompression::None | PakFileCompression::Gzip => {
+                PakIndexCompression::Raw
+            }
+            PakFileCompression::ChromiumBrotli => {
+                PakIndexCompression::BrotliCompressed
+            }
+        }
+    }
 }
 
 pub struct PakFileType {
