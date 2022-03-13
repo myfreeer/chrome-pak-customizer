@@ -1,4 +1,7 @@
 use std::io::Error;
+use std::num::ParseIntError;
+
+use crate::pak_index::PakIndexStatus;
 
 pub enum PakError {
     Unknown,
@@ -24,4 +27,20 @@ pub enum PakError {
     PakAliasSizeNotEnough(usize, usize),
     PakNotChromiumBrotli,
     PakChromiumBrotliSizeNotEnough(usize),
+    PakIndexParseError(String),
+    PakIndexUnknownTag(String),
+    // status, key, value
+    PakIndexUnknownProperty(PakIndexStatus, String, String),
+    // status, key, value
+    PakIndexInvalidProperty(PakIndexStatus, String, String),
+    // version str, err
+    PakIndexBadVersion(String, ParseIntError),
+    PakIndexBadResourceId(String, ParseIntError),
+    // version
+    PakIndexAliasNotSupported(u32),
+    // key, value, err
+    PakIndexAliasBadResourceId(String, String, ParseIntError),
+    // key, value, err
+    PakIndexAliasBadEntryIndex(String, String, ParseIntError),
+    PakIndexUnknownAction(PakIndexStatus, String)
 }

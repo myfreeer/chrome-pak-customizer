@@ -1,6 +1,17 @@
-use crate::pak_def::PakAlias;
-use crate::pak_header::PakHeader;
+use std::borrow::{Borrow, BorrowMut};
+use std::num::ParseIntError;
+use std::ops::Deref;
+use std::str::FromStr;
 
+use ini_core::Item;
+
+use crate::pak_def::{PakAlias, PakBase};
+use crate::pak_error::PakError;
+use crate::pak_error::PakError::PakIndexParseError;
+use crate::pak_header::{PAK_VERSION_V4, PAK_VERSION_V5, PakHeader, PakHeaderV4, PakHeaderV5};
+use crate::pak_index::PakIndexStatus::Resource;
+
+// TODO: compression
 pub struct PakIndexEntry {
     resource_id: u16,
     file_name: String,
@@ -12,25 +23,10 @@ pub struct PakIndex<'a> {
     alias_slice: &'a [PakAlias]
 }
 
-static NUMBER_DECIMAL_U32: [u32; 10] = [
-    10, 100, 1000, 10000, 100000, 1000000,
-    10000000, 100000000, 1000000000, u32::MAX
-];
-
-fn number_digit_count_u32(num: u32) -> u32 {
-    let mut count: u32 = 1;
-    for x in NUMBER_DECIMAL_U32 {
-        if num < x {
-            return count;
-        }
-        count += 1;
-    }
-    count
-}
-
 static NUMBER_DECIMAL_U16: [u16; 5] = [
     10, 100, 1000, 10000, u16::MAX
 ];
+
 fn number_digit_count_u16(num: u16) -> usize {
     let mut count: usize = 1;
     for x in NUMBER_DECIMAL_U16 {
@@ -50,7 +46,14 @@ pub const PAK_INDEX_GLOBAL_ENCODING: &str = "encoding";
 pub const PAK_INDEX_TAG_END: &str = "]\r\n";
 pub const PAK_INDEX_CRLF: &str = "\r\n";
 
-// TODO: pak index <- ini file
+#[derive(Clone, Copy)]
+pub enum PakIndexStatus {
+    Init,
+    Global,
+    Resource,
+    Alias
+}
+
 // TODO: pak index <-> pak header + buf
 impl PakIndex<'_> {
     fn calc_ini_byte_size(&self) -> usize {
@@ -127,5 +130,168 @@ impl PakIndex<'_> {
             vec.extend_from_slice(PAK_INDEX_CRLF.as_bytes());
         }
         vec
+    }
+
+}
+
+pub struct PakIndexRead {
+    header: Box<dyn PakHeader>,
+    entry_vec: Vec<PakIndexEntry>,
+    alias_vec: Vec<PakAlias>
+}
+
+impl PakIndexRead {
+    #[inline]
+    fn as_pak_index(&self) -> PakIndex {
+        PakIndex {
+            header: self.header.as_ref(),
+            entry_slice: &self.entry_vec,
+            alias_slice: &self.alias_vec
+        }
+    }
+
+    #[inline]
+    fn to_ini_bytes(&self) -> Vec<u8> {
+        self.as_pak_index().to_ini_bytes()
+    }
+
+    fn from_ini_buf(buf: &[u8]) -> Result<PakIndexRead, PakError> {
+        // SAFETY: ini_core only uses as_bytes internally, the utf8 format has no effect
+        let str: &str = unsafe { std::str::from_utf8_unchecked(buf ) };
+        let parser = ini_core::Parser::new(str);
+        let mut status = PakIndexStatus::Init;
+        let mut entry_vec: Vec<PakIndexEntry> = Vec::new();
+        let mut alias_vec: Vec<PakAlias> = Vec::new();
+        let mut version: u32 = 0;
+        let mut encoding: u8 = 0;
+
+        // parsing
+        for item in parser {
+            match item {
+                Item::Error(err) => {
+                    return Err(PakError::PakIndexParseError(String::from(err)))
+                }
+                Item::Section(section) => match section {
+                    PAK_INDEX_GLOBAL_TAG => {
+                        status = PakIndexStatus::Global;
+                    }
+                    PAK_INDEX_RES_TAG => {
+                        status = PakIndexStatus::Resource;
+                    }
+                    PAK_INDEX_ALIAS_TAG => {
+                        status = PakIndexStatus::Alias;
+                    }
+                    (other) => {
+                        return Err(PakError::PakIndexUnknownTag(String::from(other)));
+                    }
+                },
+                Item::Property(key, value) => match status {
+                    PakIndexStatus::Init => {
+                        return Err(PakError::PakIndexUnknownProperty(
+                            status,
+                            String::from(key),
+                            String::from(value)
+                        ));
+                    }
+                    PakIndexStatus::Global => match key {
+                        PAK_INDEX_GLOBAL_VERSION => match u32::from_str(value) {
+                            Ok(value) => {
+                                if value == PAK_VERSION_V4 || value == PAK_VERSION_V5 {
+                                    version = value;
+                                } else {
+                                    return Err(PakError::UnsupportedVersion(value));
+                                }
+                            }
+                            Err(err) => {
+                                return Err(PakError::PakIndexBadVersion(
+                                    String::from(value),
+                                    err
+                                ));
+                            }
+                        },
+                        PAK_INDEX_GLOBAL_ENCODING => match u8::from_str(value) {
+                            Ok(value) => {
+                                encoding = value;
+                            }
+                            Err(err) => {
+                                return Err(PakError::PakIndexBadVersion(
+                                    String::from(value),
+                                    err
+                                ));
+                            }
+                        }
+                        (_) => {
+                            return Err(PakError::PakIndexUnknownProperty(
+                                status,
+                                String::from(key),
+                                String::from(value)
+                            ));
+                        }
+                    },
+                    PakIndexStatus::Resource => {
+                        let mut resource_id: u16 = 0;
+                        match u16::from_str(key) {
+                            Ok(num) => {
+                                resource_id = num;
+                            }
+                            Err(err) => {
+                                return Err(PakError::PakIndexBadResourceId(
+                                    String::from(key), err));
+                            }
+                        };
+                        let file_name: String = String::from(value);
+                        entry_vec.push(PakIndexEntry { resource_id, file_name });
+                    }
+                    PakIndexStatus::Alias => {
+                        if version == PAK_VERSION_V4 {
+                            return Err(PakError::PakIndexAliasNotSupported(version));
+                        }
+                        let mut resource_id: u16 = 0;
+                        match u16::from_str(key) {
+                            Ok(num) => {
+                                resource_id = num;
+                            }
+                            Err(err) => {
+                                return Err(PakError::PakIndexAliasBadResourceId(
+                                    String::from(key),
+                                    String::from(value), err));
+                            }
+                        };
+                        let mut entry_index: u16 = 0;
+                        match u16::from_str(value) {
+                            Ok(num) => {
+                                entry_index = num;
+                            }
+                            Err(err) => {
+                                return Err(PakError::PakIndexAliasBadEntryIndex(
+                                    String::from(key),
+                                    String::from(value), err));
+                            }
+                        };
+                        alias_vec.push(PakAlias { resource_id, entry_index });
+                    }
+                }
+                Item::Action(action) => {
+                    return Err(PakError::PakIndexUnknownAction(
+                        status, String::from(action)));
+                }
+                // ignore this?
+                Item::Comment(_) => {}
+                Item::Blank => {}
+            }
+        }
+
+        let mut header = if version == PAK_VERSION_V5 {
+            Box::new(PakHeaderV5::new())
+        } else {
+            // must be 4 here
+            Box::new(PakHeaderV4::new())
+        };
+        header.write_version(version);
+        Ok(PakIndexRead {
+            header,
+            entry_vec,
+            alias_vec
+        })
     }
 }

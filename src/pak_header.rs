@@ -18,8 +18,8 @@ pub trait PakHeader : PakBase {
 }
 
 const PAK_VERSION_SIZE: usize = size_of::<u32>();
-const PAK_VERSION_V5: u32 = 5;
-const PAK_VERSION_V4: u32 = 4;
+pub const PAK_VERSION_V5: u32 = 5;
+pub const PAK_VERSION_V4: u32 = 4;
 
 // v5 header:
 // uint32(version), uint8(encoding), 3 bytes padding,
