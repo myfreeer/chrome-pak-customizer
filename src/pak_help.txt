@@ -1,0 +1,10 @@
+Pack/Unpack chrome pak file.
+
+{0} -u pak_file destination_path
+Unpack chrome pak file at pak_file to destination_path.
+
+{0} -p pak_index_file destination_pak_file
+Pack chrome pak file using pak_index_file to destination_pak_file.
+pak_index_file would be found in unpacked path.
+
+Note: existing destination files would be overwritten
