@@ -2,7 +2,7 @@
 
 use std::mem::size_of;
 
-use crate::pak_def::{PakBase, PakEntry, serialize};
+use crate::pak_def::{PakAlias, PakBase, PakEntry, serialize};
 use crate::pak_error::PakError;
 
 pub trait PakHeader : PakBase {
@@ -15,6 +15,8 @@ pub trait PakHeader : PakBase {
     fn read_alias_count(&self) -> u16;
     fn write_alias_count(&mut self, alias_count: u16);
     fn size(&self) -> usize;
+    fn resource_size(&self) -> usize;
+    fn alias_size(&self) -> usize;
     fn alias_offset(&self) -> usize;
 }
 
@@ -115,8 +117,18 @@ impl PakHeader for PakHeaderV5 {
     }
 
     #[inline]
+    fn resource_size(&self) -> usize {
+        ((self.resource_count as usize) + 1) * size_of::<PakEntry>()
+    }
+
+    #[inline]
+    fn alias_size(&self) -> usize {
+        ((self.alias_count as usize) + 1) * size_of::<PakAlias>()
+    }
+
+    #[inline]
     fn alias_offset(&self) -> usize {
-       self.size() + ((self.resource_count as usize) + 1) * size_of::<PakEntry>()
+       self.size() + self.resource_size()
     }
 }
 
@@ -213,8 +225,18 @@ impl PakHeader for PakHeaderV4 {
     }
 
     #[inline]
+    fn resource_size(&self) -> usize {
+        ((self.resource_count as usize) + 1) * size_of::<PakEntry>()
+    }
+
+    #[inline]
+    fn alias_size(&self) -> usize {
+        0
+    }
+
+    #[inline]
     fn alias_offset(&self) -> usize {
-        self.size()
+        unimplemented!("Not supported")
     }
 }
 

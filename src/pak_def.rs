@@ -107,6 +107,10 @@ impl PakBaseOffset for PakAlias {
 pub fn pak_parse_alias<'a>(header: &dyn PakHeader, buf: &'a [u8])
                        -> Result<&'a [PakAlias], PakError> {
     let alias_count = header.read_alias_count();
+    // no resource is bad, no alias is ok
+    if alias_count == 0 {
+        return Ok(&[]);
+    }
     let offset = header.alias_offset();
     pak_read_alias_slice(buf, offset, alias_count)
 }
