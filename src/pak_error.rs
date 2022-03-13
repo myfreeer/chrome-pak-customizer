@@ -3,6 +3,7 @@ use std::num::ParseIntError;
 
 use crate::pak_index::PakIndexStatus;
 
+#[derive(Debug)]
 pub enum PakError {
     Unknown,
     // actual, expected

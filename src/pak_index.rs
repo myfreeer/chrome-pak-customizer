@@ -46,7 +46,7 @@ pub const PAK_INDEX_GLOBAL_ENCODING: &str = "encoding";
 pub const PAK_INDEX_TAG_END: &str = "]\r\n";
 pub const PAK_INDEX_CRLF: &str = "\r\n";
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum PakIndexStatus {
     Init,
     Global,
@@ -141,7 +141,7 @@ pub struct PakIndex {
 
 impl PakIndex {
     #[inline]
-    fn as_pak_index_ref(&self) -> PakIndexRef {
+    pub fn as_pak_index_ref(&self) -> PakIndexRef {
         PakIndexRef {
             header: self.header.as_ref(),
             entry_slice: &self.entry_vec,
@@ -150,11 +150,11 @@ impl PakIndex {
     }
 
     #[inline]
-    fn to_ini_bytes(&self) -> Vec<u8> {
+    pub fn to_ini_bytes(&self) -> Vec<u8> {
         self.as_pak_index_ref().to_ini_bytes()
     }
 
-    fn from_ini_buf(buf: &[u8]) -> Result<PakIndex, PakError> {
+    pub fn from_ini_buf(buf: &[u8]) -> Result<PakIndex, PakError> {
         // SAFETY: ini_core only uses as_bytes internally, the utf8 format has no effect
         let str: &str = unsafe { std::str::from_utf8_unchecked(buf) };
         let parser = ini_core::Parser::new(str);
