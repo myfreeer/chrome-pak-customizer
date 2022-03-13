@@ -123,7 +123,7 @@ impl PakHeader for PakHeaderV5 {
 
     #[inline]
     fn alias_size(&self) -> usize {
-        ((self.alias_count as usize) + 1) * size_of::<PakAlias>()
+        (self.alias_count as usize) * size_of::<PakAlias>()
     }
 
     #[inline]

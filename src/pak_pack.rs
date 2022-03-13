@@ -1,0 +1,89 @@
+// pub fn pak_pack
+
+use std::fs::{read, write};
+use std::path::Path;
+
+use crate::pak_def::{PakAlias, PakBase, PakEntry};
+use crate::pak_error::PakError;
+use crate::pak_error::PakError::{PakReadIndexFileFail, PakWriteFileFail};
+use crate::pak_file_io::pak_read_files;
+use crate::PakIndex;
+
+pub fn pak_pack_index_path(index_path_str: String, output_path: String)
+                           -> Result<(), PakError> {
+    let index_path = Path::new(&index_path_str);
+    let index_dir = index_path.parent().unwrap_or(Path::new(""));
+    let index_file = match read(index_path) {
+        Ok(vec) => vec,
+        Err(err) => {
+            return Err(PakReadIndexFileFail(index_path_str, err));
+        }
+    };
+    let packed = match pak_pack_index_vec(&index_file, index_dir) {
+        Ok(vec) => vec,
+        Err(err) => {
+            return Err(err);
+        }
+    };
+    match write(Path::new(&output_path), packed) {
+        Ok(_) => Ok(()),
+        Err(err) => Err(PakWriteFileFail(output_path, err))
+    }
+}
+
+pub fn pak_pack_index_vec(pak_index_buf: &[u8], index_dir: &Path)
+                          -> Result<Vec<u8>, PakError> {
+    let pak_index = match PakIndex::from_ini_buf(pak_index_buf) {
+        Ok(index) => index,
+        Err(err) => {
+            return Err(err);
+        }
+    };
+    let pak_files = match pak_read_files(
+        index_dir, &pak_index.entry_vec) {
+        Ok(vec) => vec,
+        Err(err) => {
+            return Err(err);
+        }
+    };
+    // header
+    let pak_header = pak_index.header.as_ref();
+    let header_size = pak_header.size();
+    let resource_size = pak_header.resource_size();
+    let alias_size = pak_header.alias_size();
+    let mut vec_size = header_size + resource_size + alias_size;
+    for file in &pak_files {
+        vec_size += file.content.len();
+    }
+    let mut vec = Vec::with_capacity(vec_size);
+    vec.extend_from_slice(pak_header.as_bytes());
+
+    // resource entry
+    let resource_base_offset = header_size + resource_size + alias_size;
+    let mut resource_offset = resource_base_offset;
+    let mut resource_entry = PakEntry { resource_id: 0, offset: 0 };
+    for file in &pak_files {
+        resource_entry.resource_id = file.resource_id;
+        // TODO: handle overflow
+        resource_entry.offset = resource_offset as u32;
+        resource_offset += file.content.len();
+        vec.extend_from_slice(resource_entry.as_bytes());
+    }
+    resource_entry.resource_id = 0;
+    resource_entry.offset = resource_offset as u32;
+    vec.extend_from_slice(resource_entry.as_bytes());
+
+    // alias
+    let alias_slice: &[PakAlias] = &pak_index.alias_vec;
+    vec.extend_from_slice(unsafe {
+        std::slice::from_raw_parts(
+            (alias_slice as *const [PakAlias]) as *const u8,
+            alias_size)
+    });
+
+    for file in &pak_files {
+        vec.extend_from_slice(&file.content);
+    }
+
+    Ok(vec)
+}

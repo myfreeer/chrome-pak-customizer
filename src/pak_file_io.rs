@@ -2,7 +2,7 @@ use std::fs::read;
 use std::path::Path;
 
 use crate::pak_error::PakError;
-use crate::pak_error::PakError::{PakPackReadResourceError, PakReadIndexFileFail};
+use crate::pak_error::PakError::PakPackReadResourceError;
 use crate::pak_file::PakFile;
 use crate::pak_file_type::{BROTLI_HEADER_SIZE, pak_get_file_type, PakFileCompression};
 use crate::pak_index::PakIndexEntry;
