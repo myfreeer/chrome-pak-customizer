@@ -18,9 +18,9 @@ pub struct PakIndexEntry {
 }
 
 pub struct PakIndex<'a> {
-    header: &'a dyn PakHeader,
-    entry_slice: &'a [PakIndexEntry],
-    alias_slice: &'a [PakAlias]
+    pub header: &'a dyn PakHeader,
+    pub entry_slice: &'a [PakIndexEntry],
+    pub alias_slice: &'a [PakAlias],
 }
 
 static NUMBER_DECIMAL_U16: [u16; 5] = [
@@ -51,7 +51,7 @@ pub enum PakIndexStatus {
     Init,
     Global,
     Resource,
-    Alias
+    Alias,
 }
 
 // TODO: pak index <-> pak header + buf
@@ -64,7 +64,7 @@ impl PakIndex<'_> {
         buf_size += PAK_INDEX_GLOBAL_VERSION.len() + 4;
         // 4: = \r\n + encoding number
         buf_size += PAK_INDEX_GLOBAL_ENCODING.len() + 4;
-        if ! self.alias_slice.is_empty() {
+        if !self.alias_slice.is_empty() {
             // 8: \r\n\r\n + []\r\n
             buf_size += PAK_INDEX_ALIAS_TAG.len() + 8;
         }
@@ -131,13 +131,12 @@ impl PakIndex<'_> {
         }
         vec
     }
-
 }
 
 pub struct PakIndexRead {
     header: Box<dyn PakHeader>,
     entry_vec: Vec<PakIndexEntry>,
-    alias_vec: Vec<PakAlias>
+    alias_vec: Vec<PakAlias>,
 }
 
 impl PakIndexRead {
@@ -146,7 +145,7 @@ impl PakIndexRead {
         PakIndex {
             header: self.header.as_ref(),
             entry_slice: &self.entry_vec,
-            alias_slice: &self.alias_vec
+            alias_slice: &self.alias_vec,
         }
     }
 
@@ -157,7 +156,7 @@ impl PakIndexRead {
 
     fn from_ini_buf(buf: &[u8]) -> Result<PakIndexRead, PakError> {
         // SAFETY: ini_core only uses as_bytes internally, the utf8 format has no effect
-        let str: &str = unsafe { std::str::from_utf8_unchecked(buf ) };
+        let str: &str = unsafe { std::str::from_utf8_unchecked(buf) };
         let parser = ini_core::Parser::new(str);
         let mut status = PakIndexStatus::Init;
         let mut entry_vec: Vec<PakIndexEntry> = Vec::new();
@@ -169,7 +168,7 @@ impl PakIndexRead {
         for item in parser {
             match item {
                 Item::Error(err) => {
-                    return Err(PakError::PakIndexParseError(String::from(err)))
+                    return Err(PakError::PakIndexParseError(String::from(err)));
                 }
                 Item::Section(section) => match section {
                     PAK_INDEX_GLOBAL_TAG => {
@@ -190,7 +189,7 @@ impl PakIndexRead {
                         return Err(PakError::PakIndexUnknownProperty(
                             status,
                             String::from(key),
-                            String::from(value)
+                            String::from(value),
                         ));
                     }
                     PakIndexStatus::Global => match key {
@@ -205,7 +204,7 @@ impl PakIndexRead {
                             Err(err) => {
                                 return Err(PakError::PakIndexBadVersion(
                                     String::from(value),
-                                    err
+                                    err,
                                 ));
                             }
                         },
@@ -216,7 +215,7 @@ impl PakIndexRead {
                             Err(err) => {
                                 return Err(PakError::PakIndexBadVersion(
                                     String::from(value),
-                                    err
+                                    err,
                                 ));
                             }
                         }
@@ -224,15 +223,14 @@ impl PakIndexRead {
                             return Err(PakError::PakIndexUnknownProperty(
                                 status,
                                 String::from(key),
-                                String::from(value)
+                                String::from(value),
                             ));
                         }
                     },
                     PakIndexStatus::Resource => {
-                        let mut resource_id: u16 = 0;
-                        match u16::from_str(key) {
+                        let resource_id: u16 = match u16::from_str(key) {
                             Ok(num) => {
-                                resource_id = num;
+                                num
                             }
                             Err(err) => {
                                 return Err(PakError::PakIndexBadResourceId(
@@ -246,10 +244,9 @@ impl PakIndexRead {
                         if version == PAK_VERSION_V4 {
                             return Err(PakError::PakIndexAliasNotSupported(version));
                         }
-                        let mut resource_id: u16 = 0;
-                        match u16::from_str(key) {
+                        let resource_id: u16 = match u16::from_str(key) {
                             Ok(num) => {
-                                resource_id = num;
+                                num
                             }
                             Err(err) => {
                                 return Err(PakError::PakIndexAliasBadResourceId(
@@ -257,10 +254,9 @@ impl PakIndexRead {
                                     String::from(value), err));
                             }
                         };
-                        let mut entry_index: u16 = 0;
-                        match u16::from_str(value) {
+                        let mut entry_index: u16 = match u16::from_str(value) {
                             Ok(num) => {
-                                entry_index = num;
+                                num
                             }
                             Err(err) => {
                                 return Err(PakError::PakIndexAliasBadEntryIndex(
@@ -291,7 +287,7 @@ impl PakIndexRead {
         Ok(PakIndexRead {
             header,
             entry_vec,
-            alias_vec
+            alias_vec,
         })
     }
 }
