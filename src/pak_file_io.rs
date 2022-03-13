@@ -3,8 +3,9 @@ use std::path::Path;
 use crate::pak_error::PakError;
 use crate::pak_file::PakFile;
 use crate::pak_file_type::{BROTLI_HEADER_SIZE, pak_get_file_type, PakFileCompression};
+use crate::pak_index::PakIndexEntry;
 
-pub fn pak_write_file(dir: &String, pak_file: &PakFile) -> Result<String, PakError> {
+pub fn pak_write_file(dir: &String, pak_file: &PakFile) -> Result<PakIndexEntry, PakError> {
     let file_type = pak_get_file_type(pak_file.buf);
     let mut buf = pak_file.buf;
     // strip chromium brotli header
@@ -22,7 +23,9 @@ pub fn pak_write_file(dir: &String, pak_file: &PakFile) -> Result<String, PakErr
     let path = Path::new(&target_file_path);
     let result = std::fs::write(path, buf);
     match result {
-        Ok(_) => {Ok(file_name) }
+        Ok(_) => {
+            Ok(PakIndexEntry { resource_id: pak_file.id, file_name })
+        }
         Err(err) => {
             Err(PakError::PakWriteFileFail(err))
         }

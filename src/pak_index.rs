@@ -13,8 +13,8 @@ use crate::pak_index::PakIndexStatus::Resource;
 
 // TODO: compression
 pub struct PakIndexEntry {
-    resource_id: u16,
-    file_name: String,
+    pub resource_id: u16,
+    pub file_name: String,
 }
 
 pub struct PakIndex<'a> {
