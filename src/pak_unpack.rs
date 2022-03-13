@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use crate::pak_def::{pak_parse_alias, pak_read_alias_slice, PakAlias};
+use crate::pak_def::pak_parse_alias;
 use crate::pak_error::PakError;
 use crate::pak_error::PakError::{
     PakUnpackCanNotCreateOutputPath,
@@ -13,6 +13,8 @@ use crate::pak_file::{pak_parse_files, PakFile};
 use crate::pak_file_io::pak_write_file;
 use crate::pak_header::{pak_read_header, PakHeader};
 use crate::pak_index::{PakIndexEntry, PakIndexRef};
+
+pub const PAK_INDEX_INI: &str = "pak_index.ini";
 
 pub fn pak_unpack_path(pak_path_str: String, output_path: String) -> Result<(), PakError> {
     let pak_path = Path::new(&pak_path_str);
@@ -86,7 +88,7 @@ pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String) -> Result<(), Pak
 
     let mut index_path_str = output_path_str.clone();
     index_path_str.push(std::path::MAIN_SEPARATOR);
-    index_path_str.push_str("index.ini");
+    index_path_str.push_str(PAK_INDEX_INI);
 
 
     match fs::write(Path::new(&index_path_str), index.to_ini_bytes()) {

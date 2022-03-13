@@ -135,7 +135,7 @@ pub fn pak_get_chromium_brotli_decompressed_size(buf: &[u8]) -> Result<u64, PakE
     }
     // Get size of uncompressed resource from header.
     let mut uncompress_size: u64 = 0;
-    let mut raw_input_offset = BROTLI_CONST.len();
+    let raw_input_offset = BROTLI_CONST.len();
     let byte_size = BROTLI_HEADER_SIZE - BROTLI_CONST.len();
     for i in 0..byte_size {
         uncompress_size |= (buf[raw_input_offset + i] as u64) << (i * 8);

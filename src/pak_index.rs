@@ -1,15 +1,12 @@
-use std::borrow::{Borrow, BorrowMut};
-use std::num::ParseIntError;
-use std::ops::Deref;
+#![allow(unaligned_references)]
+
 use std::str::FromStr;
 
 use ini_core::Item;
 
 use crate::pak_def::{PakAlias, PakBase};
 use crate::pak_error::PakError;
-use crate::pak_error::PakError::PakIndexParseError;
 use crate::pak_header::{PAK_VERSION_V4, PAK_VERSION_V5, PakHeader, PakHeaderV4, PakHeaderV5};
-use crate::pak_index::PakIndexStatus::Resource;
 
 // TODO: compression
 pub struct PakIndexEntry {
@@ -180,7 +177,7 @@ impl PakIndex {
                     PAK_INDEX_ALIAS_TAG => {
                         status = PakIndexStatus::Alias;
                     }
-                    (other) => {
+                    other => {
                         return Err(PakError::PakIndexUnknownTag(String::from(other)));
                     }
                 },
@@ -219,7 +216,7 @@ impl PakIndex {
                                 ));
                             }
                         }
-                        (_) => {
+                        _ => {
                             return Err(PakError::PakIndexUnknownProperty(
                                 status,
                                 String::from(key),
@@ -228,7 +225,7 @@ impl PakIndex {
                         }
                     },
                     PakIndexStatus::Resource => {
-                        let resource_id: u16 = match u16::from_str(key) {
+                        let resource_id = match u16::from_str(key) {
                             Ok(num) => num,
                             Err(err) => {
                                 return Err(PakError::PakIndexBadResourceId(
@@ -242,7 +239,7 @@ impl PakIndex {
                         if version == PAK_VERSION_V4 {
                             return Err(PakError::PakIndexAliasNotSupported(version));
                         }
-                        let resource_id: u16 = match u16::from_str(key) {
+                        let resource_id = match u16::from_str(key) {
                             Ok(num) => num,
                             Err(err) => {
                                 return Err(PakError::PakIndexAliasBadResourceId(
@@ -250,7 +247,7 @@ impl PakIndex {
                                     String::from(value), err));
                             }
                         };
-                        let mut entry_index: u16 = match u16::from_str(value) {
+                        let entry_index = match u16::from_str(value) {
                             Ok(num) => num,
                             Err(err) => {
                                 return Err(PakError::PakIndexAliasBadEntryIndex(
@@ -277,7 +274,7 @@ impl PakIndex {
             // must be 4 here
             Box::new(PakHeaderV4::new())
         };
-        header.write_version(version);
+        header.write_encoding(encoding);
         Ok(PakIndex {
             header,
             entry_vec,
