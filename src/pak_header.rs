@@ -2,7 +2,7 @@
 
 use std::mem::size_of;
 
-use crate::pak_def::{PakBase, serialize};
+use crate::pak_def::{PakBase, PakEntry, serialize};
 use crate::pak_error::PakError;
 
 pub trait PakHeader : PakBase {
@@ -15,6 +15,7 @@ pub trait PakHeader : PakBase {
     fn read_alias_count(&self) -> u16;
     fn write_alias_count(&mut self, alias_count: u16);
     fn size(&self) -> usize;
+    fn alias_offset(&self) -> usize;
 }
 
 const PAK_VERSION_SIZE: usize = size_of::<u32>();
@@ -112,6 +113,11 @@ impl PakHeader for PakHeaderV5 {
     fn size(&self) -> usize {
         size_of::<PakHeaderV5>()
     }
+
+    #[inline]
+    fn alias_offset(&self) -> usize {
+       self.size() + ((self.resource_count as usize) + 1) * size_of::<PakEntry>()
+    }
 }
 
 impl Default for PakHeaderV5 {
@@ -204,6 +210,11 @@ impl PakHeader for PakHeaderV4 {
     #[inline]
     fn size(&self) -> usize {
         size_of::<PakHeaderV4>()
+    }
+
+    #[inline]
+    fn alias_offset(&self) -> usize {
+        self.size()
     }
 }
 

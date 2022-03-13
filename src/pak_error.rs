@@ -20,7 +20,7 @@ pub enum PakError {
     // actual, expected
     PakEntryOrAliasSizeNotEnough(usize, usize),
     PakZeroResourceCount,
-    PakWriteFileFail(Error),
+    PakWriteFileFail(String, Error),
     // buffer length, offset
     PakAliasOffsetOverflow(usize, usize),
     // actual, expected
@@ -42,5 +42,10 @@ pub enum PakError {
     PakIndexAliasBadResourceId(String, String, ParseIntError),
     // key, value, err
     PakIndexAliasBadEntryIndex(String, String, ParseIntError),
-    PakIndexUnknownAction(PakIndexStatus, String)
+    PakIndexUnknownAction(PakIndexStatus, String),
+    PakUnpackPathNotExists(String),
+    PakUnpackPakReadError(String, Error),
+    PakUnpackOutputPathNotDir(String),
+    PakUnpackCanNotCreateOutputPath(String, Error),
+    PakWriteIndexFileFail(String, Error),
 }

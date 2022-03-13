@@ -17,7 +17,7 @@ pub struct PakIndexEntry {
     pub file_name: String,
 }
 
-pub struct PakIndex<'a> {
+pub struct PakIndexRef<'a> {
     pub header: &'a dyn PakHeader,
     pub entry_slice: &'a [PakIndexEntry],
     pub alias_slice: &'a [PakAlias],
@@ -55,7 +55,7 @@ pub enum PakIndexStatus {
 }
 
 // TODO: pak index <-> pak header + buf
-impl PakIndex<'_> {
+impl PakIndexRef<'_> {
     fn calc_ini_byte_size(&self) -> usize {
         // 12: []\r\n * 2 + \r\n\r\n
         let mut buf_size: usize =
@@ -82,7 +82,7 @@ impl PakIndex<'_> {
         buf_size
     }
 
-    fn to_ini_bytes(&self) -> Vec<u8> {
+    pub fn to_ini_bytes(&self) -> Vec<u8> {
         let mut vec: Vec<u8> = Vec::with_capacity(self.calc_ini_byte_size());
         // note: extend_from_slice is benchmarked to be faster in 2022.03
         // [Global]\r\n
@@ -133,16 +133,16 @@ impl PakIndex<'_> {
     }
 }
 
-pub struct PakIndexRead {
+pub struct PakIndex {
     header: Box<dyn PakHeader>,
     entry_vec: Vec<PakIndexEntry>,
     alias_vec: Vec<PakAlias>,
 }
 
-impl PakIndexRead {
+impl PakIndex {
     #[inline]
-    fn as_pak_index(&self) -> PakIndex {
-        PakIndex {
+    fn as_pak_index_ref(&self) -> PakIndexRef {
+        PakIndexRef {
             header: self.header.as_ref(),
             entry_slice: &self.entry_vec,
             alias_slice: &self.alias_vec,
@@ -151,10 +151,10 @@ impl PakIndexRead {
 
     #[inline]
     fn to_ini_bytes(&self) -> Vec<u8> {
-        self.as_pak_index().to_ini_bytes()
+        self.as_pak_index_ref().to_ini_bytes()
     }
 
-    fn from_ini_buf(buf: &[u8]) -> Result<PakIndexRead, PakError> {
+    fn from_ini_buf(buf: &[u8]) -> Result<PakIndex, PakError> {
         // SAFETY: ini_core only uses as_bytes internally, the utf8 format has no effect
         let str: &str = unsafe { std::str::from_utf8_unchecked(buf) };
         let parser = ini_core::Parser::new(str);
@@ -229,9 +229,7 @@ impl PakIndexRead {
                     },
                     PakIndexStatus::Resource => {
                         let resource_id: u16 = match u16::from_str(key) {
-                            Ok(num) => {
-                                num
-                            }
+                            Ok(num) => num,
                             Err(err) => {
                                 return Err(PakError::PakIndexBadResourceId(
                                     String::from(key), err));
@@ -245,9 +243,7 @@ impl PakIndexRead {
                             return Err(PakError::PakIndexAliasNotSupported(version));
                         }
                         let resource_id: u16 = match u16::from_str(key) {
-                            Ok(num) => {
-                                num
-                            }
+                            Ok(num) => num,
                             Err(err) => {
                                 return Err(PakError::PakIndexAliasBadResourceId(
                                     String::from(key),
@@ -255,9 +251,7 @@ impl PakIndexRead {
                             }
                         };
                         let mut entry_index: u16 = match u16::from_str(value) {
-                            Ok(num) => {
-                                num
-                            }
+                            Ok(num) => num,
                             Err(err) => {
                                 return Err(PakError::PakIndexAliasBadEntryIndex(
                                     String::from(key),
@@ -284,7 +278,7 @@ impl PakIndexRead {
             Box::new(PakHeaderV4::new())
         };
         header.write_version(version);
-        Ok(PakIndexRead {
+        Ok(PakIndex {
             header,
             entry_vec,
             alias_vec,

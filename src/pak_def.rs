@@ -3,6 +3,7 @@
 use std::mem::size_of;
 
 use crate::pak_error::PakError;
+use crate::pak_header::PakHeader;
 
 pub trait PakBase {
     fn from_buf(buf: &[u8]) -> Result<&Self, PakError> where Self: Sized;
@@ -95,7 +96,14 @@ impl PakBaseOffset for PakAlias {
     }
 }
 
-pub fn read_pak_alias_slice(buf: &[u8], offset: usize, alias_count: u16)
+pub fn pak_parse_alias(header: &dyn PakHeader, buf: &[u8])
+                       -> Result<&[PakAlias], PakError> {
+    let alias_count = header.read_alias_count();
+    let offset = header.alias_offset();
+    pak_read_alias_slice(buf, offset, alias_count)
+}
+
+pub fn pak_read_alias_slice(buf: &[u8], offset: usize, alias_count: u16)
                             -> Result<&[PakAlias], PakError> {
     // no resource is bad, no alias is ok
     if alias_count == 0 {

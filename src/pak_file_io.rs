@@ -17,7 +17,7 @@ pub fn pak_write_file(dir: &String, pak_file: &PakFile) -> Result<PakIndexEntry,
     if file_type.ext_name.len() > 0 {
         file_name.push_str(file_type.ext_name);
     }
-    let mut target_file_path = String::from(dir);
+    let mut target_file_path = dir.clone();
     target_file_path.push(std::path::MAIN_SEPARATOR);
     target_file_path.push_str(file_name.as_str());
     let path = Path::new(&target_file_path);
@@ -27,7 +27,7 @@ pub fn pak_write_file(dir: &String, pak_file: &PakFile) -> Result<PakIndexEntry,
             Ok(PakIndexEntry { resource_id: pak_file.id, file_name })
         }
         Err(err) => {
-            Err(PakError::PakWriteFileFail(err))
+            Err(PakError::PakWriteFileFail(target_file_path, err))
         }
     }
 }
