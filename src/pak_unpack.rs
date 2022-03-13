@@ -6,27 +6,28 @@ use crate::pak_error::PakError;
 use crate::pak_error::PakError::{
     PakUnpackCanNotCreateOutputPath,
     PakUnpackOutputPathNotDir,
+    PakUnpackPakReadError,
     PakUnpackPathNotExists,
-    PakWriteIndexFileFail,
+    PakWriteIndexFileFail
 };
-use crate::pak_file::{pak_parse_files, PakFile};
+use crate::pak_file::pak_parse_files;
 use crate::pak_file_io::pak_write_file;
-use crate::pak_header::{pak_read_header, PakHeader};
-use crate::pak_index::{PakIndexEntry, PakIndexRef};
+use crate::pak_header::pak_read_header;
+use crate::pak_index::PakIndexRef;
 
 pub const PAK_INDEX_INI: &str = "pak_index.ini";
 
 pub fn pak_unpack_path(pak_path_str: String, output_path: String) -> Result<(), PakError> {
     let pak_path = Path::new(&pak_path_str);
     if !pak_path.exists() {
-        return Err(PakError::PakUnpackPathNotExists(pak_path_str));
+        return Err(PakUnpackPathNotExists(pak_path_str));
     }
     match fs::read(pak_path) {
         Ok(vec) => {
             pak_unpack_buf(&vec, output_path)
         }
         Err(err) => {
-            Err(PakError::PakUnpackPakReadError(pak_path_str, err))
+            Err(PakUnpackPakReadError(pak_path_str, err))
         }
     }
 }

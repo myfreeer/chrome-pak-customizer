@@ -32,14 +32,17 @@ pub struct PakEntry {
 }
 
 impl PakBase for PakEntry {
+    #[inline]
     fn from_buf(buf: &[u8]) -> Result<&PakEntry, PakError> {
         PakEntry::from_buf_offset(buf, 0)
     }
 
+    #[inline]
     fn as_bytes(&self) -> &[u8] {
         unsafe { serialize(self) }
     }
 
+    #[inline]
     fn new() -> PakEntry {
         PakEntry::default()
     }
@@ -63,6 +66,7 @@ fn from_buf_offset<T: Sized>(buf: &[u8], offset: usize) -> Result<&T, PakError> 
 }
 
 impl PakBaseOffset for PakEntry {
+    #[inline]
     fn from_buf_offset(buf: &[u8], offset: usize) -> Result<&PakEntry, PakError> {
         from_buf_offset(buf, offset)
     }
@@ -77,20 +81,24 @@ pub struct PakAlias {
 }
 
 impl PakBase for PakAlias {
+    #[inline]
     fn from_buf(buf: &[u8]) -> Result<&PakAlias, PakError> {
         PakAlias::from_buf_offset(buf, 0)
     }
 
+    #[inline]
     fn as_bytes(&self) -> &[u8] {
         unsafe { serialize(self) }
     }
 
+    #[inline]
     fn new() -> PakAlias {
         PakAlias::default()
     }
 }
 
 impl PakBaseOffset for PakAlias {
+    #[inline]
     fn from_buf_offset(buf: &[u8], offset: usize) -> Result<&PakAlias, PakError> {
         from_buf_offset(buf, offset)
     }
