@@ -271,7 +271,7 @@ impl PakIndex {
             }
         }
 
-        let mut header = if version == PAK_VERSION_V5 {
+        let mut header: Box<dyn PakHeader> = if version == PAK_VERSION_V5 {
             Box::new(PakHeaderV5::new())
         } else {
             // must be 4 here

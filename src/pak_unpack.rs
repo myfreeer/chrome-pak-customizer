@@ -86,7 +86,7 @@ pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String) -> Result<(), Pak
 
     let mut index_path_str = output_path_str.clone();
     index_path_str.push(std::path::MAIN_SEPARATOR);
-    index_path_str.push_str(file_name.as_str());
+    index_path_str.push_str("index.ini");
 
 
     match fs::write(Path::new(&index_path_str), index.to_ini_bytes()) {
