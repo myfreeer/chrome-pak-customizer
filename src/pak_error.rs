@@ -22,4 +22,6 @@ pub enum PakError {
     PakAliasOffsetOverflow(usize, usize),
     // actual, expected
     PakAliasSizeNotEnough(usize, usize),
+    PakNotChromiumBrotli,
+    PakChromiumBrotliSizeNotEnough(usize),
 }

@@ -1,3 +1,5 @@
+use crate::pak_error::PakError;
+
 pub enum PakFileCompression {
     None,
     Gzip,
@@ -16,10 +18,13 @@ impl PakFileType {
     }
 }
 
+pub const BROTLI_HEADER_SIZE: usize = 8;
+pub const BROTLI_CONST: [u8; 2] = [0x1e, 0x9b];
+
 pub static PAK_FILE_TYPE_UNKNOWN: PakFileType = PakFileType {
     ext_name: "",
     identifier: &[],
-    compression: PakFileCompression::None
+    compression: PakFileCompression::None,
 };
 
 // maybe trie could be faster?
@@ -82,7 +87,7 @@ pub static PAK_FILE_TYPES: [PakFileType; 17] = [
     },
     PakFileType {
         ext_name: ".br",
-        identifier: &[0x1e, 0x9b],
+        identifier: &BROTLI_CONST,
         compression: PakFileCompression::ChromiumBrotli,
     },
     PakFileType {
@@ -119,4 +124,21 @@ pub fn pak_get_file_type(buf: &[u8]) -> &PakFileType {
         }
     }
     &PAK_FILE_TYPE_UNKNOWN
+}
+
+pub fn pak_get_chromium_brotli_decompressed_size(buf: &[u8]) -> Result<u64, PakError> {
+    if !buf.starts_with(&BROTLI_CONST) {
+        return Err(PakError::PakNotChromiumBrotli);
+    }
+    if buf.len() < BROTLI_HEADER_SIZE {
+        return Err(PakError::PakChromiumBrotliSizeNotEnough(buf.len()));
+    }
+    // Get size of uncompressed resource from header.
+    let mut uncompress_size: u64 = 0;
+    let mut raw_input_offset = BROTLI_CONST.len();
+    let byte_size = BROTLI_HEADER_SIZE - BROTLI_CONST.len();
+    for i in 0..byte_size {
+        uncompress_size |= (buf[raw_input_offset + i] as u64) << (i * 8);
+    }
+    Ok(uncompress_size)
 }
