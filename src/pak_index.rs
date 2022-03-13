@@ -131,9 +131,9 @@ impl PakIndexRef<'_> {
 }
 
 pub struct PakIndex {
-    header: Box<dyn PakHeader>,
-    entry_vec: Vec<PakIndexEntry>,
-    alias_vec: Vec<PakAlias>,
+    pub header: Box<dyn PakHeader>,
+    pub entry_vec: Vec<PakIndexEntry>,
+    pub alias_vec: Vec<PakAlias>,
 }
 
 impl PakIndex {

@@ -1,5 +1,6 @@
 use std::io::Error;
 use std::num::ParseIntError;
+use std::path::{Path, PathBuf};
 
 use crate::pak_index::PakIndexStatus;
 
@@ -49,4 +50,6 @@ pub enum PakError {
     PakUnpackOutputPathNotDir(String),
     PakUnpackCanNotCreateOutputPath(String, Error),
     PakWriteIndexFileFail(String, Error),
+    PakReadIndexFileFail(String, Error),
+    PakPackReadResourceError(PathBuf, Error),
 }

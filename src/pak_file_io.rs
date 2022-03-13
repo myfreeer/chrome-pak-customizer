@@ -1,6 +1,8 @@
+use std::fs::read;
 use std::path::Path;
 
 use crate::pak_error::PakError;
+use crate::pak_error::PakError::{PakPackReadResourceError, PakReadIndexFileFail};
 use crate::pak_file::PakFile;
 use crate::pak_file_type::{BROTLI_HEADER_SIZE, pak_get_file_type, PakFileCompression};
 use crate::pak_index::PakIndexEntry;
@@ -30,4 +32,29 @@ pub fn pak_write_file(dir: &String, pak_file: &PakFile) -> Result<PakIndexEntry,
             Err(PakError::PakWriteFileFail(target_file_path, err))
         }
     }
+}
+
+pub struct PakFileContent {
+    pub resource_id: u16,
+    pub content: Vec<u8>,
+}
+
+pub fn pak_read_files(dir: &Path, entries: &[PakIndexEntry])
+                      -> Result<Vec<PakFileContent>, PakError> {
+    let mut vec = Vec::with_capacity(entries.len());
+    for entry in entries {
+        let file_path_buf = dir.join(&entry.file_name);
+        let file_path = file_path_buf.as_path();
+        // TODO: compression
+        match read(file_path) {
+            Ok(content) => vec.push(PakFileContent {
+                resource_id: entry.resource_id,
+                content
+            }),
+            Err(err) => {
+                return Err(PakPackReadResourceError(file_path_buf, err));
+            }
+        }
+    }
+    Ok(vec)
 }
