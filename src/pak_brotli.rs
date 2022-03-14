@@ -1,16 +1,35 @@
+use std::io::{Result, Write};
+
 use brotli_decompressor::BrotliDecompress;
+
+struct Counter {
+    count: usize,
+}
+
+impl Write for Counter {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        let len = buf.len();
+        self.count += len;
+        Ok(len)
+    }
+
+    #[inline]
+    fn flush(&mut self) -> Result<()> {
+        Ok(())
+    }
+}
 
 // Update: seems impossible to get uncompressed size without decompression
 // https://github.com/google/brotli/issues/861
 // https://github.com/google/brotli/issues/809
 pub fn brotli_calculate_decompressed_size(buf: &[u8]) -> u64 {
-    // TODO: maybe empty Write?
-    let mut vec = Vec::new();
+    let mut counter = Counter { count: 0 };
     let mut slice: &[u8] = buf.as_ref();
-    let result = BrotliDecompress(&mut slice, &mut vec);
+    let result = BrotliDecompress(&mut slice, &mut counter);
     match result {
         Ok(_) => {}
         Err(err) => println!("brotli_calculate_decompressed_size: {:?}", err)
     }
-    vec.len() as u64
+    counter.count as u64
 }
