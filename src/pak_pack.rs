@@ -5,7 +5,11 @@ use std::path::Path;
 
 use crate::pak_def::{PakAlias, PakBase, PakEntry};
 use crate::pak_error::PakError;
-use crate::pak_error::PakError::{PakPackWriteFileError, PakReadIndexFileFail};
+use crate::pak_error::PakError::{
+    PakPackResourceOffsetOverflow,
+    PakPackWriteFileError,
+    PakReadIndexFileFail
+};
 use crate::pak_file_io::pak_read_files;
 use crate::PakIndex;
 
@@ -64,12 +68,18 @@ pub fn pak_pack_index_vec(pak_index_buf: &[u8], index_dir: &Path)
     let mut resource_entry = PakEntry { resource_id: 0, offset: 0 };
     for file in &pak_files {
         resource_entry.resource_id = file.resource_id;
-        // TODO: handle overflow
+        if resource_offset > u32::MAX as usize {
+            return Err(PakPackResourceOffsetOverflow(
+                file.resource_id, resource_offset));
+        }
         resource_entry.offset = resource_offset as u32;
         resource_offset += file.content.len();
         vec.extend_from_slice(resource_entry.as_bytes());
     }
     resource_entry.resource_id = 0;
+    if resource_offset > u32::MAX as usize {
+        return Err(PakPackResourceOffsetOverflow(0, resource_offset));
+    }
     resource_entry.offset = resource_offset as u32;
     vec.extend_from_slice(resource_entry.as_bytes());
 

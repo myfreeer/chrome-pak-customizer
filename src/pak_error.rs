@@ -28,7 +28,9 @@ pub enum PakError {
     PakAliasOffsetOverflow(usize, usize),
     // actual, expected
     PakAliasSizeNotEnough(usize, usize),
+    #[allow(dead_code)]
     PakNotChromiumBrotli,
+    #[allow(dead_code)]
     PakChromiumBrotliSizeNotEnough(usize),
     PakIndexParseError(String),
     PakIndexUnknownTag(String),
@@ -52,4 +54,6 @@ pub enum PakError {
     PakReadIndexFileFail(String, Error),
     PakPackReadResourceError(PathBuf, Error),
     PakPackWriteFileError(String, Error),
+    // resource_id, offset
+    PakPackResourceOffsetOverflow(u16, usize),
 }
