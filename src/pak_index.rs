@@ -1,6 +1,3 @@
-#![allow(unaligned_references)]
-
-use std::path::Path;
 use std::str::FromStr;
 
 use ini_core::Item;
@@ -162,8 +159,10 @@ impl PakIndexRef<'_> {
         vec.extend_from_slice(PAK_INDEX_TAG_END.as_bytes());
         // {resource_id}={entry_index}\r\n
         for alias in self.alias_slice {
+            #[allow(unaligned_references)]
             vec.extend_from_slice(alias.resource_id.to_string().as_bytes());
             vec.push('=' as u8);
+            #[allow(unaligned_references)]
             vec.extend_from_slice(alias.entry_index.to_string().as_bytes());
             vec.extend_from_slice(PAK_INDEX_CRLF.as_bytes());
         }

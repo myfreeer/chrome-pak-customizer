@@ -1,3 +1,4 @@
+#[cfg(debug_assertions)]
 use crate::pak_error::PakError;
 use crate::pak_index::PakIndexCompression;
 
@@ -142,6 +143,7 @@ pub fn pak_get_file_type(buf: &[u8]) -> &PakFileType {
     &PAK_FILE_TYPE_UNKNOWN
 }
 
+#[cfg(debug_assertions)]
 pub fn pak_get_chromium_brotli_decompressed_size(buf: &[u8]) -> Result<u64, PakError> {
     if !buf.starts_with(&BROTLI_CONST) {
         return Err(PakError::PakNotChromiumBrotli);

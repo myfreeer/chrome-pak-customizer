@@ -7,7 +7,9 @@ use crate::pak_brotli::brotli_calculate_decompressed_size;
 use crate::pak_error::PakError;
 use crate::pak_error::PakError::PakPackReadResourceError;
 use crate::pak_file::PakFile;
-use crate::pak_file_type::{BROTLI_CONST, BROTLI_HEADER_SIZE, pak_get_chromium_brotli_decompressed_size, pak_get_file_type, PakFileCompression};
+use crate::pak_file_type::{BROTLI_CONST, BROTLI_HEADER_SIZE, pak_get_file_type, PakFileCompression};
+#[cfg(debug_assertions)]
+use crate::pak_file_type::pak_get_chromium_brotli_decompressed_size;
 use crate::pak_index::PakIndexCompression;
 use crate::pak_index::PakIndexEntry;
 
