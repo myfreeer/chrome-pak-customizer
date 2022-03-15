@@ -178,17 +178,13 @@ pub struct PakIndex {
 
 impl PakIndex {
     #[inline]
+    #[allow(dead_code)]
     pub fn as_pak_index_ref(&self) -> PakIndexRef {
         PakIndexRef {
             header: self.header.as_ref(),
             entry_slice: &self.entry_vec,
             alias_slice: &self.alias_vec,
         }
-    }
-
-    #[inline]
-    pub fn to_ini_bytes(&self) -> Vec<u8> {
-        self.as_pak_index_ref().to_ini_bytes()
     }
 
     pub fn from_ini_buf(buf: &[u8]) -> Result<PakIndex, PakError> {
