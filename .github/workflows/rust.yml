@@ -20,3 +20,7 @@ jobs:
       run: cargo build --verbose
     - name: Build Release
       run: cargo build --verbose --release
+    - name: Download test files
+      run: ./script/ci-download.sh
+    - name: Test
+      run: ./script/ci-run.sh
