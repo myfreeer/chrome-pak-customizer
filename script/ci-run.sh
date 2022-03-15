@@ -8,7 +8,7 @@ is_success=1
 
 for file in ./test_dir/*.pak
 do
-  file_name=$(basename file)
+  file_name=$(basename "$file")
   file_path="test_dir/${file_name}"
   out_dir="test_out/${file_name}_out"
   out_index="${out_dir}/pak_index.ini"
