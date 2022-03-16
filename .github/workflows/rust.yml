@@ -39,3 +39,9 @@ jobs:
         run: PowerShell.exe -ExecutionPolicy Bypass -File ./script/ci-download.ps1
       - name: Test
         run: PowerShell.exe -ExecutionPolicy Bypass -File ./script/ci-run.ps1
+      - uses: actions/upload-artifact@v3
+        with:
+          name: windows-artifact
+          path: |
+            target/debug/*.exe
+            target/release/*.exe
