@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build-linux:
 
     runs-on: ubuntu-latest
 
@@ -24,3 +24,18 @@ jobs:
       run: ./script/ci-download.sh
     - name: Test
       run: ./script/ci-run.sh
+
+  build-windows:
+
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: cargo build --verbose
+      - name: Build Release
+        run: cargo build --verbose --release
+      - name: Download test files
+        run: PowerShell.exe -ExecutionPolicy Bypass -File ./script/ci-download.ps1
+      - name: Test
+        run: PowerShell.exe -ExecutionPolicy Bypass -File ./script/ci-run.ps1
