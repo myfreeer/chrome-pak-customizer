@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use crate::pak_args::{PakArgs, PakCommand, parse_args};
 use crate::pak_index::PakIndex;
 use crate::pak_pack::pak_pack_index_path;
@@ -44,6 +46,7 @@ fn main() {
                 Ok(_) => {}
                 Err(err) => {
                     println!("Error packing: {:?}", err);
+                    exit(1);
                 }
             }
         }
@@ -58,6 +61,7 @@ fn main() {
                 Ok(_) => {}
                 Err(err) => {
                     println!("Error unpacking: {:?}", err);
+                    exit(1);
                 }
             }
         }
