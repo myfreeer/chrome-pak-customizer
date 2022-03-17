@@ -58,5 +58,7 @@ jobs:
         run: cargo build --verbose --release
       - name: Download test files
         run: ./script/ci-download.sh
+      - name: Install coreutils
+        run: brew install coreutils
       - name: Test
         run: ./script/ci-run.sh
