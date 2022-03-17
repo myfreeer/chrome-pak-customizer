@@ -45,3 +45,18 @@ jobs:
           path: |
             target/debug/*.exe
             target/release/*.exe
+
+  build-macos:
+
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: cargo build --verbose
+      - name: Build Release
+        run: cargo build --verbose --release
+      - name: Download test files
+        run: ./script/ci-download.sh
+      - name: Test
+        run: ./script/ci-run.sh
