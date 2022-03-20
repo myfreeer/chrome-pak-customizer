@@ -1,7 +1,7 @@
 
 # PowerShell.exe -ExecutionPolicy Bypass -File ci-download.ps1
 
-$download_base="https://ghproxy.com/https://github.com/myfreeer/chrome-pak-customizer/releases/download/1.0/"
+$download_base="https://github.com/myfreeer/chrome-pak-customizer/releases/download/1.0/"
 
 $test_files=@(
 "chrome_100_percent_99.0.4844.51-1.pak"

@@ -51,35 +51,16 @@ pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String) -> Result<(), Pak
         }
     }
 
-    let header = match pak_read_header(pak_buf) {
-        Ok(header) => header,
-        Err(err) => {
-            return Err(err);
-        }
-    };
+    let header = pak_read_header(pak_buf)?;
 
-    let files = match pak_parse_files(header, pak_buf) {
-        Ok(files) => files,
-        Err(err) => {
-            return Err(err);
-        }
-    };
+    let files = pak_parse_files(header, pak_buf)?;
     let mut entry_vec = Vec::with_capacity(files.len());
     for x in files {
-        match pak_write_file(&output_path_str, &x) {
-            Ok(entry) => entry_vec.push(entry),
-            Err(err) => {
-                return Err(err);
-            }
-        }
+        let entry = pak_write_file(&output_path_str, &x)?;
+        entry_vec.push(entry);
     }
 
-    let alias_slice = match pak_parse_alias(header, pak_buf) {
-        Ok(alias_slice) => alias_slice,
-        Err(err) => {
-            return Err(err);
-        }
-    };
+    let alias_slice = pak_parse_alias(header, pak_buf)?;
 
     let index = PakIndexRef {
         header,

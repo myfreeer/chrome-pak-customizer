@@ -86,3 +86,5 @@ Cargo.lock
 # Added by cargo
 
 /target
+/test_dir
+/test_out

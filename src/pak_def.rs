@@ -104,6 +104,17 @@ impl PakBaseOffset for PakAlias {
     }
 }
 
+impl PakAlias {
+    #[inline]
+    pub fn serialize_slice(alias_slice: &[PakAlias], alias_size: usize) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(
+                (alias_slice as *const [PakAlias]) as *const u8,
+                alias_size)
+        }
+    }
+}
+
 pub fn pak_parse_alias<'a>(header: &dyn PakHeader, buf: &'a [u8])
                        -> Result<&'a [PakAlias], PakError> {
     let alias_count = header.read_alias_count();

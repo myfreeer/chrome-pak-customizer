@@ -246,7 +246,7 @@ impl PakIndex {
                                 encoding = value;
                             }
                             Err(err) => {
-                                return Err(PakError::PakIndexBadVersion(
+                                return Err(PakError::PakIndexBadEncoding(
                                     String::from(value),
                                     err,
                                 ));

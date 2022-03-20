@@ -23,12 +23,7 @@ pub fn pak_pack_index_path(index_path_str: String, output_path: String)
             return Err(PakReadIndexFileFail(index_path_str, err));
         }
     };
-    let packed = match pak_pack_index_vec(&index_file, index_dir) {
-        Ok(vec) => vec,
-        Err(err) => {
-            return Err(err);
-        }
-    };
+    let packed = pak_pack_index_vec(&index_file, index_dir)?;
     match write(Path::new(&output_path), packed) {
         Ok(_) => Ok(()),
         Err(err) => Err(PakPackWriteFileError(output_path, err))
@@ -37,19 +32,8 @@ pub fn pak_pack_index_path(index_path_str: String, output_path: String)
 
 pub fn pak_pack_index_vec(pak_index_buf: &[u8], index_dir: &Path)
                           -> Result<Vec<u8>, PakError> {
-    let pak_index = match PakIndex::from_ini_buf(pak_index_buf) {
-        Ok(index) => index,
-        Err(err) => {
-            return Err(err);
-        }
-    };
-    let pak_files = match pak_read_files(
-        index_dir, &pak_index.entry_vec) {
-        Ok(vec) => vec,
-        Err(err) => {
-            return Err(err);
-        }
-    };
+    let pak_index = PakIndex::from_ini_buf(pak_index_buf)?;
+    let pak_files = pak_read_files(index_dir, &pak_index.entry_vec)?;
     // header
     let pak_header = pak_index.header.as_ref();
     let header_size = pak_header.size();
@@ -85,11 +69,7 @@ pub fn pak_pack_index_vec(pak_index_buf: &[u8], index_dir: &Path)
 
     // alias
     let alias_slice: &[PakAlias] = &pak_index.alias_vec;
-    vec.extend_from_slice(unsafe {
-        std::slice::from_raw_parts(
-            (alias_slice as *const [PakAlias]) as *const u8,
-            alias_size)
-    });
+    vec.extend_from_slice(PakAlias::serialize_slice(alias_slice, alias_size));
 
     for file in &pak_files {
         vec.extend_from_slice(&file.content);

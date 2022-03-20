@@ -38,6 +38,8 @@ pub enum PakError {
     PakIndexUnknownProperty(PakIndexStatus, String, String),
     // version str, err
     PakIndexBadVersion(String, ParseIntError),
+    // encoding str, err
+    PakIndexBadEncoding(String, ParseIntError),
     PakIndexBadResourceId(String, ParseIntError),
     // version
     PakIndexAliasNotSupported(u32),
