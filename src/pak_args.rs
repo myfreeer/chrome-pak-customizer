@@ -22,6 +22,8 @@ enum PakArgParseState {
     OutputPath
 }
 
+const U8_SLASH: u8 = '/' as u8;
+const U8_HYPHEN: u8 = '-' as u8;
 const U8_H: u8 = 'h' as u8;
 const U8_P: u8 = 'p' as u8;
 const U8_U: u8 = 'u' as u8;
@@ -54,7 +56,7 @@ pub fn parse_args() -> PakArgs {
     for x in env::args() {
         match state {
             PakArgParseState::Init => {
-                if args.self_name.is_none() {
+                if is_empty(&args.self_name) {
                     args.self_name = Some(x);
                 }
                 state = PakArgParseState::Command;
@@ -63,13 +65,21 @@ pub fn parse_args() -> PakArgs {
                 if x.eq_ignore_ascii_case(HELP) {
                     args.command = PakCommand::Help;
                 }
+                let mut is_option = false;
                 for b in x.as_bytes() {
-                    match b {
-                        &U8_H => args.command = PakCommand::Help,
-                        &U8_P => args.command = PakCommand::Pack,
-                        &U8_U => args.command = PakCommand::Unpack,
-                        _ => continue
+                    if !is_option && (b == &U8_SLASH || b == &U8_HYPHEN) {
+                        is_option = true;
+                        continue;
                     }
+                    if !is_option {
+                        break
+                    }
+                    args.command = match b {
+                        &U8_H => PakCommand::Help,
+                        &U8_P => PakCommand::Pack,
+                        &U8_U => PakCommand::Unpack,
+                        _ => continue
+                    };
                     break;
                 }
                 if args.command == PakCommand::Help {

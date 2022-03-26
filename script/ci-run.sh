@@ -13,8 +13,8 @@ do
   out_dir="test_out/${file_name}_out"
   out_index="${out_dir}/pak_index.ini"
   out_file="test_out/${file_name}_repack.pak"
-  cargo run --release u "$file_path" "$out_dir"
-  cargo run --release p "$out_index" "$out_file"
+  cargo run --release -- -u "$file_path" "$out_dir"
+  cargo run --release -- -p "$out_index" "$out_file"
   file_hash=$(sha256sum "$file_path" | cut -f1 -d ' ')
   out_hash=$(sha256sum "$out_file" | cut -f1 -d ' ')
   if ! [ "$file_hash" = "$out_hash" ]; then
