@@ -29,9 +29,16 @@ const HELP: &str = "--help";
 
 #[inline]
 fn self_name() -> Option<String> {
-    match env::current_exe() {
-        Ok(path) => Some(path.to_string_lossy().to_string()),
-        Err(_) => None
+    let path = env::current_exe().ok()?;
+    let file_name = path.file_name()?.to_str();
+    Some(String::from(file_name?))
+}
+
+#[inline]
+fn is_empty(opt: &Option<String>) -> bool {
+    match opt {
+        None => true,
+        Some(str) => str.is_empty()
     }
 }
 
@@ -61,8 +68,9 @@ pub fn parse_args() -> PakArgs {
                         &U8_H => args.command = PakCommand::Help,
                         &U8_P => args.command = PakCommand::Pack,
                         &U8_U => args.command = PakCommand::Unpack,
-                        _ => {}
+                        _ => continue
                     }
+                    break;
                 }
                 if args.command == PakCommand::Help {
                     return args;
