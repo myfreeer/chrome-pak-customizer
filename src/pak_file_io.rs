@@ -7,7 +7,12 @@ use crate::pak_brotli::brotli_calculate_decompressed_size;
 use crate::pak_error::PakError;
 use crate::pak_error::PakError::PakPackReadResourceError;
 use crate::pak_file::PakFile;
-use crate::pak_file_type::{BROTLI_CONST, BROTLI_HEADER_SIZE, pak_get_file_type, PakFileCompression};
+use crate::pak_file_type::{
+    BROTLI_CONST,
+    BROTLI_HEADER_SIZE,
+    pak_get_file_type,
+    PakFileCompression,
+};
 #[cfg(debug_assertions)]
 use crate::pak_file_type::pak_get_chromium_brotli_decompressed_size;
 use crate::pak_index::PakIndexCompression;
@@ -60,38 +65,33 @@ pub fn pak_read_files(dir: &Path, entries: &[PakIndexEntry])
     for entry in entries {
         let file_path_buf = dir.join(&entry.file_name);
         let file_path = file_path_buf.as_path();
-        match read(file_path) {
-            Ok(file_content) => {
-                let content= match entry.compression {
-                    PakIndexCompression::Raw => file_content,
-                    PakIndexCompression::BrotliCompressed => {
-                        let mut content = Vec::with_capacity(
-                            file_content.len() + BROTLI_HEADER_SIZE);
-                        // BROTLI_CONST is prepended to brotli decompressed data in order to
-                        // easily check if a resource has been brotli compressed.
-                        content.extend_from_slice(BROTLI_CONST.as_slice());
-                        // The length of the uncompressed data as 8 bytes little-endian.
-                        let size =
-                            brotli_calculate_decompressed_size(&file_content);
-                        let bytes = size.to_le_bytes();
-                        // The length of the uncompressed data is also appended to the start,
-                        // truncated to 6 bytes, little-endian. size_bytes is 8 bytes,
-                        // need to truncate further to 6.
-                        content.extend_from_slice(
-                            &bytes[..(BROTLI_HEADER_SIZE - BROTLI_CONST.len())]);
-                        content.extend_from_slice(&file_content);
-                        content
-                    }
-                };
-                vec.push(PakFileContent {
-                    resource_id: entry.resource_id,
-                    content,
-                });
+        let file_content = read(file_path)
+            .map_err(|err| PakPackReadResourceError(file_path_buf, err))?;
+        let content = match entry.compression {
+            PakIndexCompression::Raw => file_content,
+            PakIndexCompression::BrotliCompressed => {
+                let mut content = Vec::with_capacity(
+                    file_content.len() + BROTLI_HEADER_SIZE);
+                // BROTLI_CONST is prepended to brotli decompressed data in order to
+                // easily check if a resource has been brotli compressed.
+                content.extend_from_slice(BROTLI_CONST.as_slice());
+                // The length of the uncompressed data as 8 bytes little-endian.
+                let size =
+                    brotli_calculate_decompressed_size(&file_content);
+                let bytes = size.to_le_bytes();
+                // The length of the uncompressed data is also appended to the start,
+                // truncated to 6 bytes, little-endian. size_bytes is 8 bytes,
+                // need to truncate further to 6.
+                content.extend_from_slice(
+                    &bytes[..(BROTLI_HEADER_SIZE - BROTLI_CONST.len())]);
+                content.extend_from_slice(&file_content);
+                content
             }
-            Err(err) => {
-                return Err(PakPackReadResourceError(file_path_buf, err));
-            }
-        }
+        };
+        vec.push(PakFileContent {
+            resource_id: entry.resource_id,
+            content,
+        });
     }
     Ok(vec)
 }

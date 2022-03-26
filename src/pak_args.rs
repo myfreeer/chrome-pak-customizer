@@ -32,8 +32,8 @@ const HELP: &str = "--help";
 #[inline]
 fn self_name() -> Option<String> {
     let path = env::current_exe().ok()?;
-    let file_name = path.file_name()?.to_str();
-    Some(String::from(file_name?))
+    let file_name = path.file_name()?.to_str()?;
+    Some(String::from(file_name))
 }
 
 #[inline]

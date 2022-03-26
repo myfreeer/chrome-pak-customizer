@@ -22,14 +22,10 @@ pub fn pak_unpack_path(pak_path_str: String, output_path: String) -> Result<(), 
     if !pak_path.exists() {
         return Err(PakUnpackPathNotExists(pak_path_str));
     }
-    match fs::read(pak_path) {
-        Ok(vec) => {
-            pak_unpack_buf(&vec, output_path)
-        }
-        Err(err) => {
-            Err(PakUnpackPakReadError(pak_path_str, err))
-        }
-    }
+    let vec = fs::read(pak_path)
+        .map_err(|err|  PakUnpackPakReadError(pak_path_str, err))?;
+
+    pak_unpack_buf(&vec, output_path)
 }
 
 pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String) -> Result<(), PakError> {
@@ -72,9 +68,6 @@ pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String) -> Result<(), Pak
     index_path_str.push(std::path::MAIN_SEPARATOR);
     index_path_str.push_str(PAK_INDEX_INI);
 
-
-    match fs::write(Path::new(&index_path_str), index.to_ini_bytes()) {
-        Ok(_) => Ok(()),
-        Err(err) => Err(PakWriteIndexFileFail(index_path_str, err))
-    }
+    fs::write(Path::new(&index_path_str), index.to_ini_bytes())
+        .map_err(|err| PakWriteIndexFileFail(index_path_str, err))
 }

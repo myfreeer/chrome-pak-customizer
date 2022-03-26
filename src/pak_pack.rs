@@ -24,10 +24,8 @@ pub fn pak_pack_index_path(index_path_str: String, output_path: String)
         }
     };
     let packed = pak_pack_index_vec(&index_file, index_dir)?;
-    match write(Path::new(&output_path), packed) {
-        Ok(_) => Ok(()),
-        Err(err) => Err(PakPackWriteFileError(output_path, err))
-    }
+    write(Path::new(&output_path), packed)
+        .map_err(|err| PakPackWriteFileError(output_path, err))
 }
 
 pub fn pak_pack_index_vec(pak_index_buf: &[u8], index_dir: &Path)

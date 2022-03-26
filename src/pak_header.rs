@@ -256,25 +256,16 @@ pub fn pak_get_version(buf: &[u8]) -> Result<u32, PakError> {
 }
 
 pub fn pak_read_header(buf: &[u8]) -> Result<& dyn PakHeader, PakError> {
-    let result = pak_get_version(buf);
-    match result {
-        Ok(version) => match version {
-            PAK_VERSION_V5 => {
-                let result = PakHeaderV5::from_buf(buf);
-                match result {
-                    Ok(header) => Ok(header),
-                    Err(err) => Err(err)
-                }
-            }
-            PAK_VERSION_V4 => {
-                let result = PakHeaderV4::from_buf(buf);
-                match result {
-                    Ok(header) => Ok(header),
-                    Err(err) => Err(err)
-                }
-            }
-            version => Err(PakError::UnsupportedVersion(version))
+    let version = pak_get_version(buf)?;
+    match version {
+        PAK_VERSION_V5 => {
+            let header = PakHeaderV5::from_buf(buf)?;
+            Ok(header)
         }
-        Err(err) => Err(err)
+        PAK_VERSION_V4 => {
+            let header =  PakHeaderV4::from_buf(buf)?;
+            Ok(header)
+        }
+        version => Err(PakError::UnsupportedVersion(version))
     }
 }
