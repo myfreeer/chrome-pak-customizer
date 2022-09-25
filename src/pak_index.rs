@@ -61,7 +61,7 @@ pub const PAK_INDEX_GLOBAL_ENCODING: &str = "encoding";
 pub const PAK_INDEX_TAG_END: &str = "]\r\n";
 pub const PAK_INDEX_CRLF: &str = "\r\n";
 
-static NUMBER_DECIMAL_U16: [u16; 5] = [
+const NUMBER_DECIMAL_U16: [u16; 5] = [
     10, 100, 1000, 10000, u16::MAX
 ];
 

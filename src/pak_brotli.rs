@@ -26,10 +26,8 @@ impl Write for Counter {
 pub fn brotli_calculate_decompressed_size(buf: &[u8]) -> u64 {
     let mut counter = Counter { count: 0 };
     let mut slice: &[u8] = buf.as_ref();
-    let result = BrotliDecompress(&mut slice, &mut counter);
-    match result {
-        Ok(_) => {}
-        Err(err) => println!("brotli_calculate_decompressed_size: {:?}", err)
+    if let Err(err) = BrotliDecompress(&mut slice, &mut counter) {
+        println!("brotli_calculate_decompressed_size: {:?}", err)
     }
     counter.count as u64
 }

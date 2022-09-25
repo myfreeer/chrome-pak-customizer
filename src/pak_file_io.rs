@@ -39,18 +39,14 @@ pub fn pak_write_file(dir: &String, pak_file: &PakFile)
     target_file_path.push(std::path::MAIN_SEPARATOR);
     target_file_path.push_str(file_name.as_str());
     let path = Path::new(&target_file_path);
-    let result = std::fs::write(path, buf);
-    match result {
-        Ok(_) => {
-            Ok(PakIndexEntry {
-                resource_id: pak_file.id,
-                file_name,
-                compression: file_type.compression.into(),
-            })
-        }
-        Err(err) => {
-            Err(PakWriteFileFail(target_file_path, err))
-        }
+    if let Err(err) = std::fs::write(path, buf) {
+        Err(PakWriteFileFail(target_file_path, err))
+    } else {
+        Ok(PakIndexEntry {
+            resource_id: pak_file.id,
+            file_name,
+            compression: file_type.compression.into(),
+        })
     }
 }
 

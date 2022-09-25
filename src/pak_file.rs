@@ -21,18 +21,15 @@ pub fn pak_parse_files<'a>(header: &'a dyn PakHeader, buf: &'a [u8])
     let mut last_entry: Option<&PakEntry> = None;
     for _i in 0..resource_count {
         let entry = PakEntry::from_buf_offset(buf, header_offset)?;
-        match last_entry {
-            None => {}
-            Some(last_entry) => {
-                let begin_offset = last_entry.offset as usize;
-                let end_offset = entry.offset as usize;
-                let buf_slice = &buf[begin_offset..end_offset];
-                let file = PakFile {
-                    id: last_entry.resource_id,
-                    buf: buf_slice
-                };
-                vec.push(file);
-            }
+        if let Some(last_entry) = last_entry {
+            let begin_offset = last_entry.offset as usize;
+            let end_offset = entry.offset as usize;
+            let buf_slice = &buf[begin_offset..end_offset];
+            let file = PakFile {
+                id: last_entry.resource_id,
+                buf: buf_slice
+            };
+            vec.push(file);
         }
         last_entry = Some(entry);
         header_offset += size_of::<PakEntry>();

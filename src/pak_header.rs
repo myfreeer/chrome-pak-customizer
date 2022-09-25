@@ -247,6 +247,7 @@ impl Default for PakHeaderV4 {
     }
 }
 
+#[inline]
 pub fn pak_get_version(buf: &[u8]) -> Result<u32, PakError> {
     if buf.len() < PAK_VERSION_SIZE {
         return Err(PakError::VersionSizeNotEnough(

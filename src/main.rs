@@ -40,14 +40,13 @@ fn main() {
                 print_help(&args);
                 return;
             }
-            match pak_pack_index_path(
+            if let Err(err) = pak_pack_index_path(
                 args.input_path.unwrap(),
                 args.output_path.unwrap()) {
-                Ok(_) => {}
-                Err(err) => {
-                    println!("Error packing: {:?}", err);
-                    exit(1);
-                }
+                println!("Error packing: {:?}", err);
+                exit(1);
+            } else {
+                println!("Packing completed");
             }
         }
         PakCommand::Unpack => {
@@ -55,14 +54,13 @@ fn main() {
                 print_help(&args);
                 return;
             }
-            match pak_unpack_path(
+            if let Err(err) = pak_unpack_path(
                 args.input_path.unwrap(),
                 args.output_path.unwrap()) {
-                Ok(_) => {}
-                Err(err) => {
-                    println!("Error unpacking: {:?}", err);
-                    exit(1);
-                }
+                println!("Error unpacking: {:?}", err);
+                exit(1);
+            } else {
+                println!("Unpacking completed");
             }
         }
     }

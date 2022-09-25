@@ -37,12 +37,9 @@ pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String) -> Result<(), Pak
             }
         }
         Err(_) => {
-            match fs::create_dir_all(output_path) {
-                Ok(_) => {}
-                Err(err) => {
-                    return Err(PakUnpackCanNotCreateOutputPath(
-                        output_path_str, err));
-                }
+            if let Err(err) = fs::create_dir_all(output_path) {
+                return Err(PakUnpackCanNotCreateOutputPath(
+                    output_path_str, err));
             }
         }
     }
