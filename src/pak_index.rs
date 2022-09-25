@@ -61,19 +61,23 @@ pub const PAK_INDEX_GLOBAL_ENCODING: &str = "encoding";
 pub const PAK_INDEX_TAG_END: &str = "]\r\n";
 pub const PAK_INDEX_CRLF: &str = "\r\n";
 
-const NUMBER_DECIMAL_U16: [u16; 5] = [
-    10, 100, 1000, 10000, u16::MAX
-];
-
-fn number_digit_count_u16(num: u16) -> usize {
-    let mut count: usize = 1;
-    for x in NUMBER_DECIMAL_U16 {
-        if num < x {
-            return count;
+// naive but much benchmarked to be faster in 2022.09
+// modified from https://stackoverflow.com/a/1489873
+#[inline]
+fn number_digit_count_u16(x: u16) -> usize {
+    if x >= 1000u16 {
+        if x >= 10000u16 {
+            return 5;
         }
-        count += 1;
+        return 4;
     }
-    count
+    if x >= 10u16 {
+        if x >= 100u16 {
+            return 3;
+        }
+        return 2;
+    }
+    return 1;
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -328,4 +332,18 @@ impl PakIndex {
             alias_vec,
         })
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn number_digit_count_u16_test() {
+        for i in 0..u16::MAX {
+            let digits = number_digit_count_u16(i);
+            assert_eq!(i.to_string().len(), digits);
+        }
+    }
+
 }
