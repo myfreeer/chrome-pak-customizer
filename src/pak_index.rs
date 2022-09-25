@@ -163,11 +163,9 @@ impl PakIndexRef<'_> {
         vec.extend_from_slice(PAK_INDEX_TAG_END.as_bytes());
         // {resource_id}={entry_index}\r\n
         for alias in self.alias_slice {
-            #[allow(unaligned_references)]
-            vec.extend_from_slice(alias.resource_id.to_string().as_bytes());
+            vec.extend_from_slice(alias.read_resource_id().to_string().as_bytes());
             vec.push('=' as u8);
-            #[allow(unaligned_references)]
-            vec.extend_from_slice(alias.entry_index.to_string().as_bytes());
+            vec.extend_from_slice(alias.read_entry_index().to_string().as_bytes());
             vec.extend_from_slice(PAK_INDEX_CRLF.as_bytes());
         }
         vec
@@ -321,6 +319,7 @@ impl PakIndex {
             // must be 4 here
             Box::new(PakHeaderV4::new())
         };
+        entry_vec.shrink_to_fit();
         header.write_encoding(encoding);
         header.write_resource_count(entry_vec.len() as u32);
         if alias_vec.len() > 0 {

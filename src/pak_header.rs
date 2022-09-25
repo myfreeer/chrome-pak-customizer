@@ -28,7 +28,6 @@ pub const PAK_VERSION_V4: u32 = 4;
 // uint32(version), uint8(encoding), 3 bytes padding,
 // uint16(resource_count), uint16(alias_count)
 #[repr(packed(1))]
-#[derive(Debug)]
 pub struct PakHeaderV5 {
     pub version: u32,
     pub encoding: u8,
@@ -141,7 +140,6 @@ impl Default for PakHeaderV5 {
 
 // v4 header: uint32(version), uint32(resource_count), uint8(encoding)
 #[repr(packed(1))]
-#[derive(Debug)]
 pub struct PakHeaderV4 {
     pub version: u32,
     pub resource_count: u32,

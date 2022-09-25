@@ -25,7 +25,7 @@ pub unsafe fn serialize<T: Sized>(src: &T) -> &[u8] {
 
 // Entry: uint16_t resourceId; uint32_t offset;
 #[repr(packed(1))]
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct PakEntry {
     pub resource_id: u16,
     pub offset: u32,
@@ -74,7 +74,7 @@ impl PakBaseOffset for PakEntry {
 
 // Alias: uint16_t resourceId; uint16_t entry_index;
 #[repr(packed(1))]
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct PakAlias {
     pub resource_id: u16,
     pub entry_index: u16,
@@ -112,6 +112,16 @@ impl PakAlias {
                 (alias_slice as *const [PakAlias]) as *const u8,
                 alias_size)
         }
+    }
+
+    #[inline(always)]
+    pub fn read_resource_id(&self) -> u16 {
+        self.resource_id
+    }
+
+    #[inline(always)]
+    pub fn read_entry_index(&self) -> u16 {
+        self.entry_index
     }
 }
 
