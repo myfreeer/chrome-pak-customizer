@@ -91,6 +91,8 @@ pub fn parse_args() -> PakArgs {
                 }
                 if args.command == PakCommand::Help {
                     return args;
+                } else if args.command == PakCommand::Unknown {
+                    continue;
                 } else {
                     state = PakArgParseState::InputPath;
                 }
