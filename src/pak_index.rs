@@ -42,15 +42,15 @@ impl PakIndexCompression {
 }
 
 pub struct PakIndexEntry {
-    pub resource_id: u16,
+    pub resource_id: u32,
     pub file_name: String,
     pub compression: PakIndexCompression
 }
 
-pub struct PakIndexRef<'a> {
+pub struct PakIndexRef<'a, T: Sized + Into<u32>> {
     pub header: &'a dyn PakHeader,
     pub entry_slice: &'a [PakIndexEntry],
-    pub alias_slice: &'a [PakAlias],
+    pub alias_slice: &'a [PakAlias<T>],
 }
 
 pub const PAK_INDEX_GLOBAL_TAG: &str = "Global";
@@ -63,6 +63,41 @@ pub const PAK_INDEX_CRLF: &str = "\r\n";
 
 // naive but much benchmarked to be faster in 2022.09
 // modified from https://stackoverflow.com/a/1489873
+#[inline]
+fn number_digit_count_u32(x: u32) -> usize {
+    if x >= 10_000 {
+        if x >= 10_000_000 {
+            if x >= 100_000_000 {
+                if x >= 1_000_000_000 {
+                    10
+                } else {
+                    9
+                }
+            } else {
+                8
+            }
+        } else if x >= 100_000 {
+            if x >= 1_000_000 {
+                7
+            } else {
+                6
+            }
+        } else {
+            5
+        }
+    } else if x >= 100 {
+        if x >= 1_000 {
+            4
+        } else {
+            3
+        }
+    } else if x >= 10 {
+        2
+    } else {
+        1
+    }
+}
+
 #[inline]
 fn number_digit_count_u16(x: u16) -> usize {
     if x >= 1000u16 {
@@ -80,6 +115,24 @@ fn number_digit_count_u16(x: u16) -> usize {
     return 1;
 }
 
+trait NumDigits {
+    fn num_digits(&self) -> usize;
+}
+
+impl NumDigits for u16 {
+    #[inline]
+    fn num_digits(&self) -> usize {
+        number_digit_count_u16(self.clone())
+    }
+}
+
+impl NumDigits for u32 {
+    #[inline]
+    fn num_digits(&self) -> usize {
+        number_digit_count_u32(self.clone())
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum PakIndexStatus {
     Init,
@@ -88,7 +141,7 @@ pub enum PakIndexStatus {
     Alias,
 }
 
-impl PakIndexRef<'_> {
+impl <T: Sized + Into<u32>> PakIndexRef<'_, T> {
     fn calc_ini_byte_size(&self) -> usize {
         // 12: []\r\n * 2 + \r\n\r\n
         let mut buf_size: usize =
@@ -103,7 +156,7 @@ impl PakIndexRef<'_> {
         }
         for entry in self.entry_slice {
             // 3: =\r\n
-            buf_size += number_digit_count_u16(entry.resource_id) + 3;
+            buf_size += entry.resource_id.num_digits() + 3;
             buf_size += entry.file_name.len();
             if matches!(entry.compression, PakIndexCompression::BrotliCompressed) {
                 buf_size += PAK_INDEX_BROTLI_COMPRESSED.len();
@@ -111,8 +164,8 @@ impl PakIndexRef<'_> {
         }
         for alias in self.alias_slice {
             // 3: =\r\n
-            buf_size += number_digit_count_u16(alias.resource_id) + 3;
-            buf_size += number_digit_count_u16(alias.entry_index);
+            buf_size += alias.resource_id.num_digits() + 3;
+            buf_size += alias.entry_index.num_digits();
         }
 
         buf_size
@@ -172,16 +225,16 @@ impl PakIndexRef<'_> {
     }
 }
 
-pub struct PakIndex {
+pub struct PakIndex<T: Sized + Into<u32>> {
     pub header: Box<dyn PakHeader>,
     pub entry_vec: Vec<PakIndexEntry>,
-    pub alias_vec: Vec<PakAlias>,
+    pub alias_vec: Vec<PakAlias<T>>,
 }
 
-impl PakIndex {
+impl <T: Sized + Into<u32>> PakIndex<T> {
     #[inline]
     #[allow(dead_code)]
-    pub fn as_pak_index_ref(&self) -> PakIndexRef {
+    pub fn as_pak_index_ref(&self) -> PakIndexRef<T> {
         PakIndexRef {
             header: self.header.as_ref(),
             entry_slice: &self.entry_vec,
@@ -189,13 +242,13 @@ impl PakIndex {
         }
     }
 
-    pub fn from_ini_buf(buf: &[u8]) -> Result<PakIndex, PakError> {
+    pub fn from_ini_buf(buf: &[u8]) -> Result<Self, PakError> {
         // SAFETY: ini_core only uses as_bytes internally, the utf8 format has no effect
         let str: &str = unsafe { std::str::from_utf8_unchecked(buf) };
         let parser = ini_core::Parser::new(str);
         let mut status = PakIndexStatus::Init;
         let mut entry_vec: Vec<PakIndexEntry> = Vec::new();
-        let mut alias_vec: Vec<PakAlias> = Vec::new();
+        let mut alias_vec: Vec<PakAlias<T>> = Vec::new();
         let mut version: u32 = 0;
         let mut encoding: u8 = 0;
 
@@ -263,7 +316,7 @@ impl PakIndex {
                         }
                     },
                     PakIndexStatus::Resource => {
-                        let resource_id = match u16::from_str(key) {
+                        let resource_id = match u32::from_str(key) {
                             Ok(num) => num,
                             Err(err) => {
                                 return Err(PakError::PakIndexBadResourceId(
