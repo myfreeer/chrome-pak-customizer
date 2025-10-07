@@ -323,7 +323,7 @@ impl PakIndex {
         header.write_encoding(encoding);
         header.write_resource_count(entry_vec.len() as u32);
         if alias_vec.len() > 0 {
-            header.write_alias_count(alias_vec.len() as u16);
+            header.write_alias_count(alias_vec.len() as u32);
         }
         Ok(PakIndex {
             header,

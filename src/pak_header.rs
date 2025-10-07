@@ -12,8 +12,8 @@ pub trait PakHeader : PakBase {
     fn write_encoding(&mut self, encoding: u8);
     fn read_resource_count(&self) -> u32;
     fn write_resource_count(&mut self, resource_count: u32);
-    fn read_alias_count(&self) -> u16;
-    fn write_alias_count(&mut self, alias_count: u16);
+    fn read_alias_count(&self) -> u32;
+    fn write_alias_count(&mut self, alias_count: u32);
     fn size(&self) -> usize;
     fn resource_size(&self) -> usize;
     fn alias_size(&self) -> usize;
@@ -101,13 +101,13 @@ impl PakHeader for PakHeaderV5 {
     }
 
     #[inline]
-    fn read_alias_count(&self) -> u16 {
-        self.alias_count
+    fn read_alias_count(&self) -> u32 {
+        self.alias_count as u32
     }
 
     #[inline]
-    fn write_alias_count(&mut self, alias_count: u16) {
-        self.alias_count = alias_count
+    fn write_alias_count(&mut self, alias_count: u32) {
+        self.alias_count = alias_count as u16
     }
 
     #[inline]
@@ -242,6 +242,120 @@ impl Default for PakHeaderV4 {
     #[inline]
     fn default() -> Self {
         PakHeaderV4::new()
+    }
+}
+
+// v5 header:
+// uint32(version), uint8(encoding), 3 bytes padding,
+// uint32(resource_count), uint32(alias_count)
+#[repr(packed(1))]
+pub struct PakHeaderV5Edge {
+    pub version: u32,
+    pub encoding: u8,
+    pub  _padding: [u8; 3],
+    pub resource_count: u32,
+    pub alias_count: u32,
+}
+
+impl PakBase for PakHeaderV5Edge {
+    fn from_buf(buf: &[u8]) -> Result<&PakHeaderV5Edge, PakError> {
+        if buf.len() < size_of::<PakHeaderV5Edge>() {
+            return Err(PakError::V5HeaderSizeNotEnough(
+                buf.len(), size_of::<PakHeaderV5Edge>(),
+            ));
+        }
+        let p: * mut PakHeaderV5Edge = buf.as_ptr() as * mut PakHeaderV5Edge;
+        let header: &PakHeaderV5Edge = unsafe { &*p };
+        if header.version != PAK_VERSION_V5 {
+            return Err(PakError::VersionMisMatch(
+                header.version, PAK_VERSION_V5));
+        }
+        Ok(header)
+    }
+
+    #[inline]
+    fn as_bytes(&self) -> &[u8] {
+        unsafe { serialize(self) }
+    }
+
+    #[inline]
+    fn new() -> PakHeaderV5Edge {
+        PakHeaderV5Edge {
+            version: PAK_VERSION_V5,
+            encoding: 0,
+            _padding: [0, 0, 0],
+            resource_count: 0,
+            alias_count: 0,
+        }
+    }
+}
+
+impl PakHeader for PakHeaderV5Edge {
+    #[inline]
+    fn read_version(&self) -> u32 {
+        self.version
+    }
+
+    #[inline]
+    fn write_version(&mut self, version: u32) {
+        self.version = version
+    }
+
+    #[inline]
+    fn read_encoding(&self) -> u8 {
+        self.encoding
+    }
+
+    #[inline]
+    fn write_encoding(&mut self, encoding: u8) {
+        self.encoding = encoding
+    }
+
+    #[inline]
+    fn read_resource_count(&self) -> u32 {
+        self.resource_count
+    }
+
+    #[inline]
+    fn write_resource_count(&mut self, resource_count: u32) {
+        self.resource_count = resource_count
+    }
+
+    #[inline]
+    fn read_alias_count(&self) -> u32 {
+        self.alias_count
+    }
+
+    #[inline]
+    fn write_alias_count(&mut self, alias_count: u32) {
+        self.alias_count = alias_count
+    }
+
+    #[inline]
+    fn size(&self) -> usize {
+        size_of::<PakHeaderV5>()
+    }
+
+    #[inline]
+    fn resource_size(&self) -> usize {
+        ((self.resource_count as usize) + 1) * size_of::<PakEntry>()
+    }
+
+    #[inline]
+    fn alias_size(&self) -> usize {
+        (self.alias_count as usize) * size_of::<PakAlias>()
+    }
+
+    #[inline]
+    fn alias_offset(&self) -> usize {
+        self.size() + self.resource_size()
+    }
+}
+
+impl Default for PakHeaderV5Edge {
+    #[inline]
+    fn default() -> Self {
+        PakHeaderV5Edge::new()
     }
 }
 
