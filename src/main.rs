@@ -42,7 +42,8 @@ fn main() {
             }
             if let Err(err) = pak_pack_index_path(
                 args.input_path.unwrap(),
-                args.output_path.unwrap()) {
+                args.output_path.unwrap(),
+                args.edge_v5) {
                 println!("Error packing: {:?}", err);
                 exit(1);
             } else {
@@ -56,7 +57,8 @@ fn main() {
             }
             if let Err(err) = pak_unpack_path(
                 args.input_path.unwrap(),
-                args.output_path.unwrap()) {
+                args.output_path.unwrap(),
+                args.edge_v5) {
                 println!("Error unpacking: {:?}", err);
                 exit(1);
             } else {

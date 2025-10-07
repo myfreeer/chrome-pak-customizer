@@ -7,4 +7,7 @@ Unpack chrome pak file at pak_file to destination_path.
 Pack chrome pak file using pak_index_file to destination_pak_file.
 pak_index_file would be found in unpacked path.
 
+Options:
+-e Use undocumented Edge v5 pak format (32bit everywhere)
+
 Note: existing destination files would be overwritten

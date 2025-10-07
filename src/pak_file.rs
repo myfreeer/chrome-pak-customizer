@@ -3,14 +3,17 @@ use std::mem::size_of;
 use crate::pak_def::{PakBaseOffset, PakEntry};
 use crate::pak_error::PakError;
 use crate::pak_header::PakHeader;
+use crate::pak_index::NumDigits;
 
 pub struct PakFile<'a> {
     pub id: u32,
     pub buf: &'a [u8],
 }
 
-pub fn pak_parse_files<'a, T: Sized + Into<u32>>(header: &'a dyn PakHeader, buf: &'a [u8])
-                           -> Result<Vec<PakFile<'a>>, PakError> {
+pub fn pak_parse_files<'a, T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static>(
+    header: &'a dyn PakHeader,
+    buf: &'a [u8]
+) -> Result<Vec<PakFile<'a>>, PakError> {
     let mut resource_count = header.read_resource_count();
     if resource_count == 0 {
         return Err(PakError::PakZeroResourceCount);

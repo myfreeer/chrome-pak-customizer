@@ -4,6 +4,7 @@ use std::mem::size_of;
 
 use crate::pak_error::PakError;
 use crate::pak_header::PakHeader;
+use crate::pak_index::NumDigits;
 
 pub trait PakBase {
     fn from_buf(buf: &[u8]) -> Result<&Self, PakError> where Self: Sized;
@@ -26,12 +27,12 @@ pub unsafe fn serialize<T: Sized>(src: &T) -> &[u8] {
 // Entry: uint16_t resourceId; uint32_t offset;
 #[repr(packed(1))]
 #[derive(Default)]
-pub struct PakEntry<T: Copy + Into<u32>> {
+pub struct PakEntry<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> {
     pub resource_id: T,
     pub offset: u32,
 }
 
-impl <T: Copy + Into<u32>> PakBase for PakEntry<T> {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakBase for PakEntry<T> {
     #[inline]
     fn from_buf(buf: &[u8]) -> Result<&Self, PakError> {
         Self::from_buf_offset(buf, 0)
@@ -65,7 +66,7 @@ fn from_buf_offset<T: Sized>(buf: &[u8], offset: usize) -> Result<&T, PakError> 
     })
 }
 
-impl <T: Copy + Into<u32>> PakBaseOffset for PakEntry<T> {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakBaseOffset for PakEntry<T> {
     #[inline]
     fn from_buf_offset(buf: &[u8], offset: usize) -> Result<&Self, PakError> {
         from_buf_offset(buf, offset)
@@ -75,12 +76,12 @@ impl <T: Copy + Into<u32>> PakBaseOffset for PakEntry<T> {
 // Alias: uint16_t resourceId; uint16_t entry_index;
 #[repr(packed(1))]
 #[derive(Default)]
-pub struct PakAlias<T: Copy + Into<u32>> {
+pub struct PakAlias<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> {
     pub resource_id: T,
     pub entry_index: T,
 }
 
-impl <T: Copy + Into<u32>> PakBase for PakAlias<T> {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakBase for PakAlias<T> {
     #[inline]
     fn from_buf(buf: &[u8]) -> Result<&Self, PakError> {
         PakAlias::from_buf_offset(buf, 0)
@@ -97,14 +98,14 @@ impl <T: Copy + Into<u32>> PakBase for PakAlias<T> {
     }
 }
 
-impl <T: Copy + Into<u32>> PakBaseOffset for PakAlias<T> {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakBaseOffset for PakAlias<T> {
     #[inline]
     fn from_buf_offset(buf: &[u8], offset: usize) -> Result<&Self, PakError> {
         from_buf_offset(buf, offset)
     }
 }
 
-impl <T: Copy + Into<u32>> PakAlias<T> {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakAlias<T> {
     #[inline]
     pub fn serialize_slice(alias_slice: &[Self], alias_size: usize) -> &[u8] {
         unsafe {
@@ -125,7 +126,7 @@ impl <T: Copy + Into<u32>> PakAlias<T> {
     }
 }
 
-pub fn pak_parse_alias<'a, T: Sized + Into<u32>>(
+pub fn pak_parse_alias<'a, T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static>(
     header: &dyn PakHeader,
     buf: &'a [u8]
 ) -> Result<&'a [PakAlias<T>], PakError> {
@@ -138,7 +139,7 @@ pub fn pak_parse_alias<'a, T: Sized + Into<u32>>(
     pak_read_alias_slice(buf, offset, alias_count)
 }
 
-pub fn pak_read_alias_slice<T: Sized + Into<u32>>(
+pub fn pak_read_alias_slice<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static>(
     buf: &[u8],
     offset: usize,
     alias_count: u32

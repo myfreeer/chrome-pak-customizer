@@ -12,12 +12,12 @@ use crate::pak_error::PakError::{
 };
 use crate::pak_file::pak_parse_files;
 use crate::pak_file_io::pak_write_file;
-use crate::pak_header::pak_read_header;
-use crate::pak_index::PakIndexRef;
+use crate::pak_header::{pak_read_header, PakHeader};
+use crate::pak_index::{NumDigits, PakIndexEntry, PakIndexRef};
 
 pub const PAK_INDEX_INI: &str = "pak_index.ini";
 
-pub fn pak_unpack_path(pak_path_str: String, output_path: String) -> Result<(), PakError> {
+pub fn pak_unpack_path(pak_path_str: String, output_path: String, edge_v5: bool) -> Result<(), PakError> {
     let pak_path = Path::new(&pak_path_str);
     if !pak_path.exists() {
         return Err(PakUnpackPathNotExists(pak_path_str));
@@ -25,10 +25,10 @@ pub fn pak_unpack_path(pak_path_str: String, output_path: String) -> Result<(), 
     let vec = fs::read(pak_path)
         .map_err(|err|  PakUnpackPakReadError(pak_path_str, err))?;
 
-    pak_unpack_buf(&vec, output_path)
+    pak_unpack_buf(&vec, output_path, edge_v5)
 }
 
-pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String) -> Result<(), PakError> {
+pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String, edge_v5: bool) -> Result<(), PakError> {
     let output_path = Path::new(&output_path_str);
     match fs::metadata(output_path) {
         Ok(metadata) => {
@@ -44,16 +44,33 @@ pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String) -> Result<(), Pak
         }
     }
 
-    let header = pak_read_header(pak_buf)?;
-
-    let files = pak_parse_files(header, pak_buf)?;
+    let header = pak_read_header(pak_buf, edge_v5)?;
+    let files = if edge_v5 {
+        pak_parse_files::<u32>(header, pak_buf)
+    } else {
+        pak_parse_files::<u16>(header, pak_buf)
+    }?;
     let mut entry_vec = Vec::with_capacity(files.len());
     for x in files {
         let entry = pak_write_file(&output_path_str, &x)?;
         entry_vec.push(entry);
     }
 
-    let alias_slice = pak_parse_alias(header, pak_buf)?;
+    if edge_v5 {
+        pak_write_index::<u32>(header, pak_buf, entry_vec, &output_path_str)
+    } else {
+        pak_write_index::<u16>(header, pak_buf, entry_vec, &output_path_str)
+    }
+}
+
+fn pak_write_index<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static>(
+    header: & dyn PakHeader,
+    pak_buf: &[u8],
+    entry_vec: Vec<PakIndexEntry>,
+    output_path_str: &String
+) -> Result<(), PakError> {
+
+    let alias_slice = pak_parse_alias::<T>(header, pak_buf)?;
 
     let index = PakIndexRef {
         header,

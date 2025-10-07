@@ -57,5 +57,5 @@ pub enum PakError {
     PakPackReadResourceError(PathBuf, Error),
     PakPackWriteFileError(String, Error),
     // resource_id, offset
-    PakPackResourceOffsetOverflow(u16, usize),
+    PakPackResourceOffsetOverflow(u32, usize),
 }

@@ -47,7 +47,7 @@ pub struct PakIndexEntry {
     pub compression: PakIndexCompression
 }
 
-pub struct PakIndexRef<'a, T: Sized + Into<u32>> {
+pub struct PakIndexRef<'a, T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> {
     pub header: &'a dyn PakHeader,
     pub entry_slice: &'a [PakIndexEntry],
     pub alias_slice: &'a [PakAlias<T>],
@@ -115,7 +115,7 @@ fn number_digit_count_u16(x: u16) -> usize {
     return 1;
 }
 
-trait NumDigits {
+pub(crate) trait NumDigits {
     fn num_digits(&self) -> usize;
 }
 
@@ -141,7 +141,7 @@ pub enum PakIndexStatus {
     Alias,
 }
 
-impl <T: Sized + Into<u32>> PakIndexRef<'_, T> {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakIndexRef<'_, T> {
     fn calc_ini_byte_size(&self) -> usize {
         // 12: []\r\n * 2 + \r\n\r\n
         let mut buf_size: usize =
@@ -164,8 +164,10 @@ impl <T: Sized + Into<u32>> PakIndexRef<'_, T> {
         }
         for alias in self.alias_slice {
             // 3: =\r\n
-            buf_size += alias.resource_id.num_digits() + 3;
-            buf_size += alias.entry_index.num_digits();
+            let resource_id = alias.resource_id;
+            buf_size += resource_id.num_digits() + 3;
+            let entry_index = alias.entry_index;
+            buf_size += entry_index.num_digits();
         }
 
         buf_size
@@ -225,13 +227,13 @@ impl <T: Sized + Into<u32>> PakIndexRef<'_, T> {
     }
 }
 
-pub struct PakIndex<T: Sized + Into<u32>> {
+pub struct PakIndex<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> {
     pub header: Box<dyn PakHeader>,
     pub entry_vec: Vec<PakIndexEntry>,
     pub alias_vec: Vec<PakAlias<T>>,
 }
 
-impl <T: Sized + Into<u32>> PakIndex<T> {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakIndex<T> {
     #[inline]
     #[allow(dead_code)]
     pub fn as_pak_index_ref(&self) -> PakIndexRef<T> {
@@ -337,7 +339,7 @@ impl <T: Sized + Into<u32>> PakIndex<T> {
                         if version == PAK_VERSION_V4 {
                             return Err(PakError::PakIndexAliasNotSupported(version));
                         }
-                        let resource_id = match u16::from_str(key) {
+                        let resource_id = match u32::from_str(key) {
                             Ok(num) => num,
                             Err(err) => {
                                 return Err(PakError::PakIndexAliasBadResourceId(
@@ -345,7 +347,7 @@ impl <T: Sized + Into<u32>> PakIndex<T> {
                                     String::from(value), err));
                             }
                         };
-                        let entry_index = match u16::from_str(value) {
+                        let entry_index = match u32::from_str(value) {
                             Ok(num) => num,
                             Err(err) => {
                                 return Err(PakError::PakIndexAliasBadEntryIndex(
@@ -353,7 +355,10 @@ impl <T: Sized + Into<u32>> PakIndex<T> {
                                     String::from(value), err));
                             }
                         };
-                        alias_vec.push(PakAlias { resource_id, entry_index });
+                        alias_vec.push(PakAlias {
+                            resource_id: resource_id.try_into().unwrap_or_default(),
+                            entry_index: entry_index.try_into().unwrap_or_default(),
+                        });
                     }
                 }
                 Item::Action(action) => {
@@ -367,7 +372,7 @@ impl <T: Sized + Into<u32>> PakIndex<T> {
         }
 
         let mut header: Box<dyn PakHeader> = if version == PAK_VERSION_V5 {
-            Box::new(PakHeaderV5::new())
+            Box::new(PakHeaderV5::<T>::new())
         } else {
             // must be 4 here
             Box::new(PakHeaderV4::new())

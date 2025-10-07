@@ -4,6 +4,7 @@ use std::mem::size_of;
 
 use crate::pak_def::{PakAlias, PakBase, PakEntry, serialize};
 use crate::pak_error::PakError;
+use crate::pak_index::NumDigits;
 
 pub trait PakHeader : PakBase {
     fn read_version(&self) -> u32;
@@ -28,7 +29,7 @@ pub const PAK_VERSION_V4: u32 = 4;
 // uint32(version), uint8(encoding), 3 bytes padding,
 // uint16(resource_count), uint16(alias_count)
 #[repr(packed(1))]
-pub struct PakHeaderV5<T: Copy + Into<u32>> {
+pub struct PakHeaderV5<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> {
     pub version: u32,
     pub encoding: u8,
     pub  _padding: [u8; 3],
@@ -36,15 +37,15 @@ pub struct PakHeaderV5<T: Copy + Into<u32>> {
     pub alias_count: T,
 }
 
-impl <T: Copy + Into<u32>> PakBase for PakHeaderV5<T> {
-    fn from_buf(buf: &[u8]) -> Result<&Self<T>, PakError> {
-        if buf.len() < size_of::<Self<T>>() {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakBase for PakHeaderV5<T> {
+    fn from_buf(buf: &[u8]) -> Result<&Self, PakError> {
+        if buf.len() < size_of::<Self>() {
             return Err(PakError::V5HeaderSizeNotEnough(
-                buf.len(), size_of::<Self<T>>(),
+                buf.len(), size_of::<Self>(),
             ));
         }
-        let p: * mut Self<T> = buf.as_ptr() as * mut Self<T>;
-        let header: &Self<T> = unsafe { &*p };
+        let p: * mut Self = buf.as_ptr() as * mut Self;
+        let header: &Self = unsafe { &*p };
         if header.version != PAK_VERSION_V5 {
             return Err(PakError::VersionMisMatch(
                 header.version, PAK_VERSION_V5));
@@ -63,13 +64,13 @@ impl <T: Copy + Into<u32>> PakBase for PakHeaderV5<T> {
             version: PAK_VERSION_V5,
             encoding: 0,
             _padding: [0, 0, 0],
-            resource_count: 0,
-            alias_count: 0,
+            resource_count: Default::default(),
+            alias_count: Default::default(),
         }
     }
 }
 
-impl <T: Copy + Into<u32>> PakHeader for PakHeaderV5<T> {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakHeader for PakHeaderV5<T> {
     #[inline]
     fn read_version(&self) -> u32 {
         self.version
@@ -92,37 +93,39 @@ impl <T: Copy + Into<u32>> PakHeader for PakHeaderV5<T> {
 
     #[inline]
     fn read_resource_count(&self) -> u32 {
-        self.resource_count as u32
+        self.resource_count.into()
     }
 
     #[inline]
     fn write_resource_count(&mut self, resource_count: u32) {
-        self.resource_count = resource_count.into()
+        self.resource_count = resource_count.try_into().unwrap_or_default()
     }
 
     #[inline]
     fn read_alias_count(&self) -> u32 {
-        self.alias_count as u32
+        self.alias_count.into()
     }
 
     #[inline]
     fn write_alias_count(&mut self, alias_count: u32) {
-        self.alias_count = alias_count.into()
+        self.alias_count = alias_count.try_into().unwrap_or_default()
     }
 
     #[inline]
     fn size(&self) -> usize {
-        size_of::<Self<T>>()
+        size_of::<Self>()
     }
 
     #[inline]
     fn resource_size(&self) -> usize {
-        ((self.resource_count as usize) + 1) * size_of::<PakEntry<T>>()
+        let resource_count: u32 = self.resource_count.into();
+        ((resource_count as usize) + 1) * size_of::<PakEntry<T>>()
     }
 
     #[inline]
     fn alias_size(&self) -> usize {
-        (self.alias_count as usize) * size_of::<PakAlias<T>>()
+        let alias_count: u32 = self.alias_count.into();
+        (alias_count as usize) * size_of::<PakAlias<T>>()
     }
 
     #[inline]
@@ -131,7 +134,7 @@ impl <T: Copy + Into<u32>> PakHeader for PakHeaderV5<T> {
     }
 }
 
-impl <T: Copy + Into<u32>> Default for PakHeaderV5<T> {
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> Default for PakHeaderV5<T> {
     #[inline]
     fn default() -> Self {
         Self::new()
@@ -260,7 +263,7 @@ pub fn pak_read_header(buf: &[u8], edge_v5: bool) -> Result<& dyn PakHeader, Pak
         PAK_VERSION_V5 => {
             if edge_v5 {
                 let header = PakHeaderV5::<u32>::from_buf(buf)?;
-                Ok(header)
+                return Ok(header);
             }
             let header = PakHeaderV5::<u16>::from_buf(buf)?;
             Ok(header)

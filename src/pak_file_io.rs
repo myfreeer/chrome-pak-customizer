@@ -51,7 +51,7 @@ pub fn pak_write_file(dir: &String, pak_file: &PakFile)
 }
 
 pub struct PakFileContent {
-    pub resource_id: u16,
+    pub resource_id: u32,
     pub content: Vec<u8>,
 }
 

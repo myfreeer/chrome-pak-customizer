@@ -12,7 +12,8 @@ pub struct PakArgs {
     pub command: PakCommand,
     pub input_path: Option<String>,
     pub output_path: Option<String>,
-    pub self_name: Option<String>
+    pub self_name: Option<String>,
+    pub edge_v5: bool,
 }
 
 enum PakArgParseState {
@@ -27,6 +28,7 @@ const U8_HYPHEN: u8 = '-' as u8;
 const U8_H: u8 = 'h' as u8;
 const U8_P: u8 = 'p' as u8;
 const U8_U: u8 = 'u' as u8;
+const U8_E: u8 = 'e' as u8;
 const HELP: &str = "--help";
 
 #[inline]
@@ -49,7 +51,8 @@ pub fn parse_args() -> PakArgs {
         command: PakCommand::Unknown,
         input_path: None,
         output_path: None,
-        self_name: self_name()
+        self_name: self_name(),
+        edge_v5: false,
     };
     let mut state = PakArgParseState::Init;
 
@@ -78,6 +81,10 @@ pub fn parse_args() -> PakArgs {
                         &U8_H => PakCommand::Help,
                         &U8_P => PakCommand::Pack,
                         &U8_U => PakCommand::Unpack,
+                        &U8_E => {
+                            args.edge_v5 = true;
+                            continue;
+                        },
                         _ => continue
                     };
                     break;
