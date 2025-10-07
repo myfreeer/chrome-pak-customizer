@@ -26,15 +26,15 @@ pub unsafe fn serialize<T: Sized>(src: &T) -> &[u8] {
 // Entry: uint16_t resourceId; uint32_t offset;
 #[repr(packed(1))]
 #[derive(Default)]
-pub struct PakEntry {
-    pub resource_id: u16,
+pub struct PakEntry<T: Copy + Into<u32>> {
+    pub resource_id: T,
     pub offset: u32,
 }
 
-impl PakBase for PakEntry {
+impl <T: Copy + Into<u32>> PakBase for PakEntry<T> {
     #[inline]
-    fn from_buf(buf: &[u8]) -> Result<&PakEntry, PakError> {
-        PakEntry::from_buf_offset(buf, 0)
+    fn from_buf(buf: &[u8]) -> Result<&Self, PakError> {
+        Self::from_buf_offset(buf, 0)
     }
 
     #[inline]
@@ -43,7 +43,7 @@ impl PakBase for PakEntry {
     }
 
     #[inline]
-    fn new() -> PakEntry {
+    fn new() -> Self {
         PakEntry::default()
     }
 }
@@ -65,9 +65,9 @@ fn from_buf_offset<T: Sized>(buf: &[u8], offset: usize) -> Result<&T, PakError> 
     })
 }
 
-impl PakBaseOffset for PakEntry {
+impl <T: Copy + Into<u32>> PakBaseOffset for PakEntry<T> {
     #[inline]
-    fn from_buf_offset(buf: &[u8], offset: usize) -> Result<&PakEntry, PakError> {
+    fn from_buf_offset(buf: &[u8], offset: usize) -> Result<&Self, PakError> {
         from_buf_offset(buf, offset)
     }
 }
@@ -75,14 +75,14 @@ impl PakBaseOffset for PakEntry {
 // Alias: uint16_t resourceId; uint16_t entry_index;
 #[repr(packed(1))]
 #[derive(Default)]
-pub struct PakAlias {
-    pub resource_id: u16,
-    pub entry_index: u16,
+pub struct PakAlias<T: Copy + Into<u32>> {
+    pub resource_id: T,
+    pub entry_index: T,
 }
 
-impl PakBase for PakAlias {
+impl <T: Copy + Into<u32>> PakBase for PakAlias<T> {
     #[inline]
-    fn from_buf(buf: &[u8]) -> Result<&PakAlias, PakError> {
+    fn from_buf(buf: &[u8]) -> Result<&Self, PakError> {
         PakAlias::from_buf_offset(buf, 0)
     }
 
@@ -92,41 +92,43 @@ impl PakBase for PakAlias {
     }
 
     #[inline]
-    fn new() -> PakAlias {
+    fn new() -> Self {
         PakAlias::default()
     }
 }
 
-impl PakBaseOffset for PakAlias {
+impl <T: Copy + Into<u32>> PakBaseOffset for PakAlias<T> {
     #[inline]
-    fn from_buf_offset(buf: &[u8], offset: usize) -> Result<&PakAlias, PakError> {
+    fn from_buf_offset(buf: &[u8], offset: usize) -> Result<&Self, PakError> {
         from_buf_offset(buf, offset)
     }
 }
 
-impl PakAlias {
+impl <T: Copy + Into<u32>> PakAlias<T> {
     #[inline]
-    pub fn serialize_slice(alias_slice: &[PakAlias], alias_size: usize) -> &[u8] {
+    pub fn serialize_slice(alias_slice: &[Self], alias_size: usize) -> &[u8] {
         unsafe {
             std::slice::from_raw_parts(
-                (alias_slice as *const [PakAlias]) as *const u8,
+                (alias_slice as *const [Self]) as *const u8,
                 alias_size)
         }
     }
 
     #[inline(always)]
-    pub fn read_resource_id(&self) -> u16 {
-        self.resource_id
+    pub fn read_resource_id(&self) -> u32 {
+        self.resource_id.into()
     }
 
     #[inline(always)]
-    pub fn read_entry_index(&self) -> u16 {
-        self.entry_index
+    pub fn read_entry_index(&self) -> u32 {
+        self.entry_index.into()
     }
 }
 
-pub fn pak_parse_alias<'a>(header: &dyn PakHeader, buf: &'a [u8])
-                       -> Result<&'a [PakAlias], PakError> {
+pub fn pak_parse_alias<'a, T: Sized + Into<u32>>(
+    header: &dyn PakHeader,
+    buf: &'a [u8]
+) -> Result<&'a [PakAlias<T>], PakError> {
     let alias_count = header.read_alias_count();
     // no resource is bad, no alias is ok
     if alias_count == 0 {
@@ -136,8 +138,11 @@ pub fn pak_parse_alias<'a>(header: &dyn PakHeader, buf: &'a [u8])
     pak_read_alias_slice(buf, offset, alias_count)
 }
 
-pub fn pak_read_alias_slice(buf: &[u8], offset: usize, alias_count: u16)
-                            -> Result<&[PakAlias], PakError> {
+pub fn pak_read_alias_slice<T: Sized + Into<u32>>(
+    buf: &[u8],
+    offset: usize,
+    alias_count: u32
+) -> Result<&[PakAlias<T>], PakError> {
     // no resource is bad, no alias is ok
     if alias_count == 0 {
         return Ok(&[]);
@@ -147,13 +152,13 @@ pub fn pak_read_alias_slice(buf: &[u8], offset: usize, alias_count: u16)
         return Err(PakError::PakAliasOffsetOverflow(len, offset));
     }
     let remaining_size = len - offset;
-    let required_size = size_of::<PakAlias>() * (alias_count as usize);
+    let required_size = size_of::<PakAlias<T>>() * (alias_count as usize);
     if remaining_size < required_size {
         return Err(PakError::PakAliasSizeNotEnough(
             remaining_size, required_size));
     }
     Ok(unsafe {
-        let p: *mut PakAlias = buf.as_ptr().add(offset) as *mut PakAlias;
+        let p: *mut PakAlias<T> = buf.as_ptr().add(offset) as *mut PakAlias<T>;
         std::slice::from_raw_parts(p, alias_count as usize)
     })
 }
