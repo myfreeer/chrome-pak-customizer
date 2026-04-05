@@ -12,9 +12,9 @@ pub trait PakHeader : PakBase {
     fn read_encoding(&self) -> u8;
     fn write_encoding(&mut self, encoding: u8);
     fn read_resource_count(&self) -> u32;
-    fn write_resource_count(&mut self, resource_count: u32);
+    fn write_resource_count(&mut self, resource_count: u32) -> Result<(), PakError>;
     fn read_alias_count(&self) -> u32;
-    fn write_alias_count(&mut self, alias_count: u32);
+    fn write_alias_count(&mut self, alias_count: u32) -> Result<(), PakError>;
     fn size(&self) -> usize;
     fn resource_size(&self) -> usize;
     fn alias_size(&self) -> usize;
@@ -97,8 +97,11 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakHea
     }
 
     #[inline]
-    fn write_resource_count(&mut self, resource_count: u32) {
-        self.resource_count = resource_count.try_into().unwrap_or_default()
+    fn write_resource_count(&mut self, resource_count: u32) -> Result<(), PakError> {
+        self.resource_count = resource_count
+            .try_into()
+            .map_err(|_| PakError::PakResourceCountOutOfRange(resource_count as usize))?;
+        Ok(())
     }
 
     #[inline]
@@ -107,8 +110,11 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakHea
     }
 
     #[inline]
-    fn write_alias_count(&mut self, alias_count: u32) {
-        self.alias_count = alias_count.try_into().unwrap_or_default()
+    fn write_alias_count(&mut self, alias_count: u32) -> Result<(), PakError> {
+        self.alias_count = alias_count
+            .try_into()
+            .map_err(|_| PakError::PakAliasCountOutOfRange(alias_count as usize))?;
+        Ok(())
     }
 
     #[inline]
@@ -206,8 +212,9 @@ impl PakHeader for PakHeaderV4 {
     }
 
     #[inline]
-    fn write_resource_count(&mut self, resource_count: u32) {
-        self.resource_count = resource_count
+    fn write_resource_count(&mut self, resource_count: u32) -> Result<(), PakError> {
+        self.resource_count = resource_count;
+        Ok(())
     }
 
     #[inline]
@@ -216,8 +223,12 @@ impl PakHeader for PakHeaderV4 {
     }
 
     #[inline]
-    fn write_alias_count(&mut self, _alias_count: u32) {
-        unimplemented!("Not supported")
+    fn write_alias_count(&mut self, alias_count: u32) -> Result<(), PakError> {
+        if alias_count == 0 {
+            Ok(())
+        } else {
+            Err(PakError::PakIndexAliasNotSupported(PAK_VERSION_V4))
+        }
     }
 
     #[inline]

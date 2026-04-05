@@ -43,6 +43,11 @@ pub enum PakError {
     PakIndexBadResourceId(String, ParseIntError),
     // version
     PakIndexAliasNotSupported(u32),
+    PakResourceIdOutOfRange(u32),
+    PakAliasResourceIdOutOfRange(u32),
+    PakAliasEntryIndexOutOfRange(u32),
+    PakResourceCountOutOfRange(usize),
+    PakAliasCountOutOfRange(usize),
     // key, value, err
     PakIndexAliasBadResourceId(String, String, ParseIntError),
     // key, value, err

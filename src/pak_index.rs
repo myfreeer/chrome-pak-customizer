@@ -119,6 +119,23 @@ pub(crate) trait NumDigits {
     fn num_digits(&self) -> usize;
 }
 
+#[inline]
+fn convert_u32<T, F>(value: u32, err: F) -> Result<T, PakError>
+where
+    T: TryFrom<u32>,
+    F: FnOnce(u32) -> PakError,
+{
+    value.try_into().map_err(|_| err(value))
+}
+
+#[inline]
+fn checked_count_u32<F>(value: usize, err: F) -> Result<u32, PakError>
+where
+    F: FnOnce(usize) -> PakError,
+{
+    value.try_into().map_err(|_| err(value))
+}
+
 impl NumDigits for u16 {
     #[inline]
     fn num_digits(&self) -> usize {
@@ -325,6 +342,10 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
                                     String::from(key), err));
                             }
                         };
+                        let _: T = convert_u32(
+                            resource_id,
+                            PakError::PakResourceIdOutOfRange,
+                        )?;
                         let mut file_name: String = String::from(value);
                         let compression =
                             PakIndexCompression::of_file_name(&file_name);
@@ -355,9 +376,17 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
                                     String::from(value), err));
                             }
                         };
+                        let alias_resource_id = convert_u32(
+                            resource_id,
+                            PakError::PakAliasResourceIdOutOfRange,
+                        )?;
+                        let alias_entry_index = convert_u32(
+                            entry_index,
+                            PakError::PakAliasEntryIndexOutOfRange,
+                        )?;
                         alias_vec.push(PakAlias {
-                            resource_id: resource_id.try_into().unwrap_or_default(),
-                            entry_index: entry_index.try_into().unwrap_or_default(),
+                            resource_id: alias_resource_id,
+                            entry_index: alias_entry_index,
                         });
                     }
                 }
@@ -379,9 +408,17 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
         };
         entry_vec.shrink_to_fit();
         header.write_encoding(encoding);
-        header.write_resource_count(entry_vec.len() as u32);
+        let resource_count = checked_count_u32(
+            entry_vec.len(),
+            PakError::PakResourceCountOutOfRange,
+        )?;
+        header.write_resource_count(resource_count)?;
         if alias_vec.len() > 0 {
-            header.write_alias_count(alias_vec.len() as u32);
+            let alias_count = checked_count_u32(
+                alias_vec.len(),
+                PakError::PakAliasCountOutOfRange,
+            )?;
+            header.write_alias_count(alias_count)?;
         }
         Ok(PakIndex {
             header,
@@ -400,6 +437,45 @@ mod tests {
         for i in 0..u16::MAX {
             let digits = number_digit_count_u16(i);
             assert_eq!(i.to_string().len(), digits);
+        }
+    }
+
+    #[test]
+    fn from_ini_rejects_out_of_range_resource_id_for_u16() {
+        let buf = b"[Global]\nversion=5\nencoding=0\n\n[Resources]\n65536=65536.txt\n";
+        match PakIndex::<u16>::from_ini_buf(buf) {
+            Err(PakError::PakResourceIdOutOfRange(65536)) => {}
+            other => panic!("unexpected result: {:?}", other.err()),
+        }
+    }
+
+    #[test]
+    fn from_ini_rejects_out_of_range_alias_values_for_u16() {
+        let buf = b"[Global]\nversion=5\nencoding=0\n\n[Resources]\n1=1.txt\n\n[Alias]\n65536=0\n";
+        match PakIndex::<u16>::from_ini_buf(buf) {
+            Err(PakError::PakAliasResourceIdOutOfRange(65536)) => {}
+            other => panic!("unexpected result: {:?}", other.err()),
+        }
+
+        let buf = b"[Global]\nversion=5\nencoding=0\n\n[Resources]\n1=1.txt\n\n[Alias]\n2=65536\n";
+        match PakIndex::<u16>::from_ini_buf(buf) {
+            Err(PakError::PakAliasEntryIndexOutOfRange(65536)) => {}
+            other => panic!("unexpected result: {:?}", other.err()),
+        }
+    }
+
+    #[test]
+    fn from_ini_rejects_out_of_range_resource_count_for_u16() {
+        let mut ini = String::from("[Global]\nversion=5\nencoding=0\n\n[Resources]\n");
+        for i in 0..=u16::MAX as u32 {
+            ini.push_str(i.to_string().as_str());
+            ini.push('=');
+            ini.push_str(i.to_string().as_str());
+            ini.push_str(".txt\n");
+        }
+        match PakIndex::<u16>::from_ini_buf(ini.as_bytes()) {
+            Err(PakError::PakResourceCountOutOfRange(65536)) => {}
+            other => panic!("unexpected result: {:?}", other.err()),
         }
     }
 

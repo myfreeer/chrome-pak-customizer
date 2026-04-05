@@ -58,11 +58,13 @@ pub fn pak_pack_index_vec<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigi
     let resource_base_offset = header_size + resource_size + alias_size;
     let mut resource_offset = resource_base_offset;
     let mut resource_entry: PakEntry<T> = PakEntry {
-        resource_id: 0u32.try_into().unwrap_or_default(),
-        offset: 0u32.try_into().unwrap_or_default(),
+        resource_id: Default::default(),
+        offset: 0,
     };
     for file in &pak_files {
-        resource_entry.resource_id = file.resource_id.try_into().unwrap_or_default();
+        resource_entry.resource_id = file.resource_id
+            .try_into()
+            .map_err(|_| PakError::PakResourceIdOutOfRange(file.resource_id))?;
         if resource_offset > u32::MAX as usize {
             return Err(PakPackResourceOffsetOverflow(
                 file.resource_id, resource_offset));
@@ -71,7 +73,7 @@ pub fn pak_pack_index_vec<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigi
         resource_offset += file.content.len();
         vec.extend_from_slice(resource_entry.as_bytes());
     }
-    resource_entry.resource_id = 0u32.try_into().unwrap_or_default();
+    resource_entry.resource_id = Default::default();
     if resource_offset > u32::MAX as usize {
         return Err(PakPackResourceOffsetOverflow(0, resource_offset));
     }
