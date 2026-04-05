@@ -63,6 +63,7 @@ pub enum PakError {
     PakWriteIndexFileFail(String, Error),
     PakReadIndexFileFail(String, Error),
     PakPackReadResourceError(PathBuf, Error),
+    PakPackBrotliDecompressError(PathBuf, Error),
     PakPackWriteFileError(String, Error),
     // resource_id, offset
     PakPackResourceOffsetOverflow(u32, usize),
