@@ -22,6 +22,7 @@ pub enum PakError {
     PakEntryOrAliasOffsetOverflow(usize, usize),
     // actual, expected
     PakEntryOrAliasSizeNotEnough(usize, usize),
+    PakArithmeticOverflow(&'static str),
     PakZeroResourceCount,
     PakWriteFileFail(String, Error),
     // buffer length, offset

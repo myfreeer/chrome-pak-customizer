@@ -3,7 +3,7 @@
 use std::fs::{read, write};
 use std::path::Path;
 
-use crate::pak_def::{PakAlias, PakBase, PakEntry};
+use crate::pak_def::{PakAlias, PakBase, PakEntry, checked_add_usize};
 use crate::pak_error::PakError;
 use crate::pak_error::PakError::{
     PakPackResourceOffsetOverflow,
@@ -45,17 +45,29 @@ pub fn pak_pack_index_vec<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigi
     // header
     let pak_header = pak_index.header.as_ref();
     let header_size = pak_header.size();
-    let resource_size = pak_header.resource_size();
-    let alias_size = pak_header.alias_size();
-    let mut vec_size = header_size + resource_size + alias_size;
+    let resource_size = pak_header.resource_size()?;
+    let alias_size = pak_header.alias_size()?;
+    let mut vec_size = checked_add_usize(
+        checked_add_usize(header_size, resource_size, "packed header size")?,
+        alias_size,
+        "packed header size",
+    )?;
     for file in &pak_files {
-        vec_size += file.content.len();
+        vec_size = checked_add_usize(
+            vec_size,
+            file.content.len(),
+            "packed file size",
+        )?;
     }
     let mut vec = Vec::with_capacity(vec_size);
     vec.extend_from_slice(pak_header.as_bytes());
 
     // resource entry
-    let resource_base_offset = header_size + resource_size + alias_size;
+    let resource_base_offset = checked_add_usize(
+        checked_add_usize(header_size, resource_size, "resource base offset")?,
+        alias_size,
+        "resource base offset",
+    )?;
     let mut resource_offset = resource_base_offset;
     let mut resource_entry: PakEntry<T> = PakEntry {
         resource_id: Default::default(),
@@ -70,7 +82,11 @@ pub fn pak_pack_index_vec<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigi
                 file.resource_id, resource_offset));
         }
         resource_entry.offset = resource_offset as u32;
-        resource_offset += file.content.len();
+        resource_offset = checked_add_usize(
+            resource_offset,
+            file.content.len(),
+            "resource offset",
+        )?;
         vec.extend_from_slice(resource_entry.as_bytes());
     }
     resource_entry.resource_id = Default::default();

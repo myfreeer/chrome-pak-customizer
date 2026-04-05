@@ -2,7 +2,14 @@
 
 use std::mem::size_of;
 
-use crate::pak_def::{PakAlias, PakBase, PakEntry, serialize};
+use crate::pak_def::{
+    PakAlias,
+    PakBase,
+    PakEntry,
+    checked_add_usize,
+    checked_mul_usize,
+    serialize,
+};
 use crate::pak_error::PakError;
 use crate::pak_index::NumDigits;
 
@@ -16,9 +23,9 @@ pub trait PakHeader : PakBase {
     fn read_alias_count(&self) -> u32;
     fn write_alias_count(&mut self, alias_count: u32) -> Result<(), PakError>;
     fn size(&self) -> usize;
-    fn resource_size(&self) -> usize;
-    fn alias_size(&self) -> usize;
-    fn alias_offset(&self) -> usize;
+    fn resource_size(&self) -> Result<usize, PakError>;
+    fn alias_size(&self) -> Result<usize, PakError>;
+    fn alias_offset(&self) -> Result<usize, PakError>;
 }
 
 const PAK_VERSION_SIZE: usize = size_of::<u32>();
@@ -123,20 +130,33 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakHea
     }
 
     #[inline]
-    fn resource_size(&self) -> usize {
+    fn resource_size(&self) -> Result<usize, PakError> {
         let resource_count: u32 = self.resource_count.into();
-        ((resource_count as usize) + 1) * size_of::<PakEntry<T>>()
+        let entry_count = checked_add_usize(
+            resource_count as usize,
+            1,
+            "resource entry count",
+        )?;
+        checked_mul_usize(
+            entry_count,
+            size_of::<PakEntry<T>>(),
+            "resource table size",
+        )
     }
 
     #[inline]
-    fn alias_size(&self) -> usize {
+    fn alias_size(&self) -> Result<usize, PakError> {
         let alias_count: u32 = self.alias_count.into();
-        (alias_count as usize) * size_of::<PakAlias<T>>()
+        checked_mul_usize(
+            alias_count as usize,
+            size_of::<PakAlias<T>>(),
+            "alias table size",
+        )
     }
 
     #[inline]
-    fn alias_offset(&self) -> usize {
-       self.size() + self.resource_size()
+    fn alias_offset(&self) -> Result<usize, PakError> {
+       checked_add_usize(self.size(), self.resource_size()?, "alias offset")
     }
 }
 
@@ -237,18 +257,27 @@ impl PakHeader for PakHeaderV4 {
     }
 
     #[inline]
-    fn resource_size(&self) -> usize {
-        ((self.resource_count as usize) + 1) * size_of::<PakEntry<u16>>()
+    fn resource_size(&self) -> Result<usize, PakError> {
+        let entry_count = checked_add_usize(
+            self.resource_count as usize,
+            1,
+            "resource entry count",
+        )?;
+        checked_mul_usize(
+            entry_count,
+            size_of::<PakEntry<u16>>(),
+            "resource table size",
+        )
     }
 
     #[inline]
-    fn alias_size(&self) -> usize {
-        0
+    fn alias_size(&self) -> Result<usize, PakError> {
+        Ok(0)
     }
 
     #[inline]
-    fn alias_offset(&self) -> usize {
-        unimplemented!("Not supported")
+    fn alias_offset(&self) -> Result<usize, PakError> {
+        Err(PakError::PakIndexAliasNotSupported(PAK_VERSION_V4))
     }
 }
 

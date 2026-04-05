@@ -24,6 +24,20 @@ pub unsafe fn serialize<T: Sized>(src: &T) -> &[u8] {
         ::std::mem::size_of::<T>())
 }
 
+#[inline]
+pub fn checked_add_usize(lhs: usize, rhs: usize, context: &'static str)
+                         -> Result<usize, PakError> {
+    lhs.checked_add(rhs)
+        .ok_or(PakError::PakArithmeticOverflow(context))
+}
+
+#[inline]
+pub fn checked_mul_usize(lhs: usize, rhs: usize, context: &'static str)
+                         -> Result<usize, PakError> {
+    lhs.checked_mul(rhs)
+        .ok_or(PakError::PakArithmeticOverflow(context))
+}
+
 // Entry: uint16_t resourceId; uint32_t offset;
 #[repr(packed(1))]
 #[derive(Default)]
@@ -135,7 +149,7 @@ pub fn pak_parse_alias<'a, T: Copy + Into<u32> + Default + TryFrom<u32> + NumDig
     if alias_count == 0 {
         return Ok(&[]);
     }
-    let offset = header.alias_offset();
+    let offset = header.alias_offset()?;
     pak_read_alias_slice(buf, offset, alias_count)
 }
 
@@ -153,7 +167,10 @@ pub fn pak_read_alias_slice<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDi
         return Err(PakError::PakAliasOffsetOverflow(len, offset));
     }
     let remaining_size = len - offset;
-    let required_size = size_of::<PakAlias<T>>() * (alias_count as usize);
+    let required_size = checked_mul_usize(
+        size_of::<PakAlias<T>>(),
+        alias_count as usize,
+        "alias slice size")?;
     if remaining_size < required_size {
         return Err(PakError::PakAliasSizeNotEnough(
             remaining_size, required_size));
@@ -162,4 +179,21 @@ pub fn pak_read_alias_slice<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDi
         let p: *mut PakAlias<T> = buf.as_ptr().add(offset) as *mut PakAlias<T>;
         std::slice::from_raw_parts(p, alias_count as usize)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn checked_add_usize_overflow_test() {
+        let err = checked_add_usize(usize::MAX, 1, "add").err();
+        assert!(matches!(err, Some(PakError::PakArithmeticOverflow("add"))));
+    }
+
+    #[test]
+    fn checked_mul_usize_overflow_test() {
+        let err = checked_mul_usize(usize::MAX, 2, "mul").err();
+        assert!(matches!(err, Some(PakError::PakArithmeticOverflow("mul"))));
+    }
 }

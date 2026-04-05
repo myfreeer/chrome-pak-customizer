@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use crate::pak_def::{PakBaseOffset, PakEntry};
+use crate::pak_def::{PakBaseOffset, PakEntry, checked_add_usize};
 use crate::pak_error::PakError;
 use crate::pak_header::PakHeader;
 use crate::pak_index::NumDigits;
@@ -20,7 +20,9 @@ pub fn pak_parse_files<'a, T: Copy + Into<u32> + Default + TryFrom<u32> + NumDig
     }
     let mut vec: Vec<PakFile<'a>> = Vec::with_capacity(resource_count as usize);
     let mut header_offset = header.size();
-    resource_count += 1;
+    resource_count = resource_count
+        .checked_add(1)
+        .ok_or(PakError::PakArithmeticOverflow("resource entry count"))?;
     let mut last_entry: Option<&PakEntry<T>> = None;
     for _i in 0..resource_count {
         let entry = PakEntry::<T>::from_buf_offset(buf, header_offset)?;
@@ -41,7 +43,11 @@ pub fn pak_parse_files<'a, T: Copy + Into<u32> + Default + TryFrom<u32> + NumDig
             vec.push(file);
         }
         last_entry = Some(entry);
-        header_offset += size_of::<PakEntry<T>>();
+        header_offset = checked_add_usize(
+            header_offset,
+            size_of::<PakEntry<T>>(),
+            "resource table offset",
+        )?;
     }
     Ok(vec)
 }
