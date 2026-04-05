@@ -34,6 +34,7 @@ pub enum PakError {
     PakChromiumBrotliSizeNotEnough(usize),
     PakIndexParseError(String),
     PakIndexUnknownTag(String),
+    PakIndexMissingVersion,
     // status, key, value
     PakIndexUnknownProperty(PakIndexStatus, String, String),
     // version str, err

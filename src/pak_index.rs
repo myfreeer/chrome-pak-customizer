@@ -357,6 +357,9 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
                         });
                     }
                     PakIndexStatus::Alias => {
+                        if version == 0 {
+                            return Err(PakError::PakIndexMissingVersion);
+                        }
                         if version == PAK_VERSION_V4 {
                             return Err(PakError::PakIndexAliasNotSupported(version));
                         }
@@ -400,11 +403,10 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
             }
         }
 
-        let mut header: Box<dyn PakHeader> = if version == PAK_VERSION_V5 {
-            Box::new(PakHeaderV5::<T>::new())
-        } else {
-            // must be 4 here
-            Box::new(PakHeaderV4::new())
+        let mut header: Box<dyn PakHeader> = match version {
+            PAK_VERSION_V5 => Box::new(PakHeaderV5::<T>::new()),
+            PAK_VERSION_V4 => Box::new(PakHeaderV4::new()),
+            _ => return Err(PakError::PakIndexMissingVersion),
         };
         entry_vec.shrink_to_fit();
         header.write_encoding(encoding);
@@ -475,6 +477,24 @@ mod tests {
         }
         match PakIndex::<u16>::from_ini_buf(ini.as_bytes()) {
             Err(PakError::PakResourceCountOutOfRange(65536)) => {}
+            other => panic!("unexpected result: {:?}", other.err()),
+        }
+    }
+
+    #[test]
+    fn from_ini_requires_version_before_alias_section() {
+        let buf = b"[Alias]\n2=0\n\n[Global]\nversion=5\nencoding=0\n";
+        match PakIndex::<u16>::from_ini_buf(buf) {
+            Err(PakError::PakIndexMissingVersion) => {}
+            other => panic!("unexpected result: {:?}", other.err()),
+        }
+    }
+
+    #[test]
+    fn from_ini_requires_version_before_building_header() {
+        let buf = b"[Global]\nencoding=0\n\n[Resources]\n1=1.txt\n";
+        match PakIndex::<u16>::from_ini_buf(buf) {
+            Err(PakError::PakIndexMissingVersion) => {}
             other => panic!("unexpected result: {:?}", other.err()),
         }
     }
