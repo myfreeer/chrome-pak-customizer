@@ -33,6 +33,24 @@ jobs:
           target/debug/chrome-pak-customizer
           target/release/chrome-pak-customizer
 
+  build-linux-musl:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install musl toolchain
+      run: sudo apt-get update && sudo apt-get install -y musl-tools
+    - name: Add musl target
+      run: rustup target add x86_64-unknown-linux-musl
+    - name: Build Release
+      run: cargo build --verbose --release --target x86_64-unknown-linux-musl
+    - uses: actions/upload-artifact@v4
+      with:
+        name: linux-musl-artifact
+        path: |
+          target/x86_64-unknown-linux-musl/release/chrome-pak-customizer
+
   build-windows:
 
     runs-on: windows-latest
