@@ -48,6 +48,7 @@ pub enum PakError {
     PakResourceIdOutOfRange(u32),
     PakAliasResourceIdOutOfRange(u32),
     PakAliasEntryIndexOutOfRange(u32),
+    PakAliasEntryIndexOutOfBounds(u32, u32),
     PakResourceCountOutOfRange(usize),
     PakAliasCountOutOfRange(usize),
     // key, value, err

@@ -408,6 +408,15 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
             PAK_VERSION_V4 => Box::new(PakHeaderV4::new()),
             _ => return Err(PakError::PakIndexMissingVersion),
         };
+        for alias in &alias_vec {
+            let entry_index = alias.read_entry_index();
+            if entry_index as usize >= entry_vec.len() {
+                return Err(PakError::PakAliasEntryIndexOutOfBounds(
+                    alias.read_resource_id(),
+                    entry_index,
+                ));
+            }
+        }
         entry_vec.shrink_to_fit();
         header.write_encoding(encoding);
         let resource_count = checked_count_u32(
@@ -495,6 +504,15 @@ mod tests {
         let buf = b"[Global]\nencoding=0\n\n[Resources]\n1=1.txt\n";
         match PakIndex::<u16>::from_ini_buf(buf) {
             Err(PakError::PakIndexMissingVersion) => {}
+            other => panic!("unexpected result: {:?}", other.err()),
+        }
+    }
+
+    #[test]
+    fn from_ini_rejects_alias_index_past_resource_count() {
+        let buf = b"[Global]\nversion=5\nencoding=0\n\n[Resources]\n1=1.txt\n\n[Alias]\n2=1\n";
+        match PakIndex::<u16>::from_ini_buf(buf) {
+            Err(PakError::PakAliasEntryIndexOutOfBounds(2, 1)) => {}
             other => panic!("unexpected result: {:?}", other.err()),
         }
     }
