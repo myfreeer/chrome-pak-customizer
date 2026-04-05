@@ -1,6 +1,6 @@
 use std::env;
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum PakCommand {
     Unknown,
     Help,
@@ -47,6 +47,46 @@ fn is_empty(opt: &Option<String>) -> bool {
 }
 
 pub fn parse_args() -> PakArgs {
+    parse_args_iter(env::args())
+}
+
+fn parse_option_arg(arg: &str, args: &mut PakArgs) {
+    let mut is_option = false;
+    for b in arg.as_bytes() {
+        if !is_option && (b == &U8_SLASH || b == &U8_HYPHEN) {
+            is_option = true;
+            continue;
+        }
+        if !is_option {
+            break;
+        }
+        match b {
+            &U8_H => {
+                args.command = PakCommand::Help;
+                return;
+            }
+            &U8_P => {
+                if args.command == PakCommand::Unknown {
+                    args.command = PakCommand::Pack;
+                }
+            }
+            &U8_U => {
+                if args.command == PakCommand::Unknown {
+                    args.command = PakCommand::Unpack;
+                }
+            }
+            &U8_E => {
+                args.edge_v5 = true;
+            }
+            _ => {}
+        }
+    }
+}
+
+fn parse_args_iter<I>(iter: I) -> PakArgs
+where
+    I: IntoIterator<Item = String>,
+{
     let mut args = PakArgs {
         command: PakCommand::Unknown,
         input_path: None,
@@ -56,7 +96,7 @@ pub fn parse_args() -> PakArgs {
     };
     let mut state = PakArgParseState::Init;
 
-    for x in env::args() {
+    for x in iter {
         match state {
             PakArgParseState::Init => {
                 if is_empty(&args.self_name) {
@@ -68,27 +108,7 @@ pub fn parse_args() -> PakArgs {
                 if x.eq_ignore_ascii_case(HELP) {
                     args.command = PakCommand::Help;
                 }
-                let mut is_option = false;
-                for b in x.as_bytes() {
-                    if !is_option && (b == &U8_SLASH || b == &U8_HYPHEN) {
-                        is_option = true;
-                        continue;
-                    }
-                    if !is_option {
-                        break
-                    }
-                    args.command = match b {
-                        &U8_H => PakCommand::Help,
-                        &U8_P => PakCommand::Pack,
-                        &U8_U => PakCommand::Unpack,
-                        &U8_E => {
-                            args.edge_v5 = true;
-                            continue;
-                        },
-                        _ => continue
-                    };
-                    break;
-                }
+                parse_option_arg(x.as_str(), &mut args);
                 if args.command == PakCommand::Help {
                     return args;
                 } else if args.command == PakCommand::Unknown {
@@ -109,4 +129,31 @@ pub fn parse_args() -> PakArgs {
     }
 
     args
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(args: &[&str]) -> PakArgs {
+        parse_args_iter(args.iter().map(|x| String::from(*x)).collect::<Vec<String>>())
+    }
+
+    #[test]
+    fn compact_options_allow_edge_modifier_after_command() {
+        let args = parse(&["pak", "-ue", "in.pak", "out"]);
+        assert_eq!(args.command, PakCommand::Unpack);
+        assert!(args.edge_v5);
+        assert_eq!(args.input_path.as_deref(), Some("in.pak"));
+        assert_eq!(args.output_path.as_deref(), Some("out"));
+    }
+
+    #[test]
+    fn compact_options_allow_edge_modifier_before_command() {
+        let args = parse(&["pak", "-eu", "in.pak", "out"]);
+        assert_eq!(args.command, PakCommand::Unpack);
+        assert!(args.edge_v5);
+        assert_eq!(args.input_path.as_deref(), Some("in.pak"));
+        assert_eq!(args.output_path.as_deref(), Some("out"));
+    }
 }
