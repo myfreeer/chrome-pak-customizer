@@ -181,9 +181,9 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
         }
         for alias in self.alias_slice {
             // 3: =\r\n
-            let resource_id = alias.resource_id;
+            let resource_id = alias.read_resource_id_raw();
             buf_size += resource_id.num_digits() + 3;
-            let entry_index = alias.entry_index;
+            let entry_index = alias.read_entry_index_raw();
             buf_size += entry_index.num_digits();
         }
 
@@ -387,10 +387,10 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
                             entry_index,
                             PakError::PakAliasEntryIndexOutOfRange,
                         )?;
-                        alias_vec.push(PakAlias {
-                            resource_id: alias_resource_id,
-                            entry_index: alias_entry_index,
-                        });
+                        let mut alias = PakAlias::new();
+                        alias.write_resource_id(alias_resource_id);
+                        alias.write_entry_index(alias_entry_index);
+                        alias_vec.push(alias);
                     }
                 }
                 Item::Action(action) => {

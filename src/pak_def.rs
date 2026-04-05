@@ -1,5 +1,3 @@
-#![allow(unaligned_references)]
-
 use std::mem::size_of;
 
 use crate::pak_error::PakError;
@@ -22,6 +20,16 @@ pub unsafe fn serialize<T: Sized>(src: &T) -> &[u8] {
     std::slice::from_raw_parts(
         (src as *const T) as *const u8,
         ::std::mem::size_of::<T>())
+}
+
+#[inline(always)]
+pub unsafe fn read_unaligned_field<T: Copy>(field: *const T) -> T {
+    field.read_unaligned()
+}
+
+#[inline(always)]
+pub unsafe fn write_unaligned_field<T>(field: *mut T, value: T) {
+    field.write_unaligned(value)
 }
 
 #[inline]
@@ -87,6 +95,33 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakBas
     }
 }
 
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakEntry<T> {
+    #[inline(always)]
+    pub fn read_resource_id_raw(&self) -> T {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.resource_id)) }
+    }
+
+    #[inline(always)]
+    pub fn read_resource_id(&self) -> u32 {
+        self.read_resource_id_raw().into()
+    }
+
+    #[inline(always)]
+    pub fn write_resource_id(&mut self, value: T) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.resource_id), value) }
+    }
+
+    #[inline(always)]
+    pub fn read_offset(&self) -> u32 {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.offset)) }
+    }
+
+    #[inline(always)]
+    pub fn write_offset(&mut self, value: u32) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.offset), value) }
+    }
+}
+
 // Alias: uint16_t resourceId; uint16_t entry_index;
 #[repr(packed(1))]
 #[derive(Default)]
@@ -131,12 +166,32 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakAli
 
     #[inline(always)]
     pub fn read_resource_id(&self) -> u32 {
-        self.resource_id.into()
+        self.read_resource_id_raw().into()
     }
 
     #[inline(always)]
     pub fn read_entry_index(&self) -> u32 {
-        self.entry_index.into()
+        self.read_entry_index_raw().into()
+    }
+
+    #[inline(always)]
+    pub fn read_resource_id_raw(&self) -> T {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.resource_id)) }
+    }
+
+    #[inline(always)]
+    pub fn write_resource_id(&mut self, value: T) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.resource_id), value) }
+    }
+
+    #[inline(always)]
+    pub fn read_entry_index_raw(&self) -> T {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.entry_index)) }
+    }
+
+    #[inline(always)]
+    pub fn write_entry_index(&mut self, value: T) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.entry_index), value) }
     }
 }
 

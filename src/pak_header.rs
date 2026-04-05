@@ -1,5 +1,3 @@
-#![allow(unaligned_references)]
-
 use std::mem::size_of;
 
 use crate::pak_def::{
@@ -8,7 +6,9 @@ use crate::pak_def::{
     PakEntry,
     checked_add_usize,
     checked_mul_usize,
+    read_unaligned_field,
     serialize,
+    write_unaligned_field,
 };
 use crate::pak_error::PakError;
 use crate::pak_index::NumDigits;
@@ -53,9 +53,9 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakBas
         }
         let p: * mut Self = buf.as_ptr() as * mut Self;
         let header: &Self = unsafe { &*p };
-        if header.version != PAK_VERSION_V5 {
+        if header.read_version() != PAK_VERSION_V5 {
             return Err(PakError::VersionMisMatch(
-                header.version, PAK_VERSION_V5));
+                header.read_version(), PAK_VERSION_V5));
         }
         Ok(header)
     }
@@ -77,50 +77,94 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakBas
     }
 }
 
+impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakHeaderV5<T> {
+    #[inline(always)]
+    fn read_version_field(&self) -> u32 {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.version)) }
+    }
+
+    #[inline(always)]
+    fn write_version_field(&mut self, value: u32) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.version), value) }
+    }
+
+    #[inline(always)]
+    fn read_encoding_field(&self) -> u8 {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.encoding)) }
+    }
+
+    #[inline(always)]
+    fn write_encoding_field(&mut self, value: u8) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.encoding), value) }
+    }
+
+    #[inline(always)]
+    fn read_resource_count_field(&self) -> T {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.resource_count)) }
+    }
+
+    #[inline(always)]
+    fn write_resource_count_field(&mut self, value: T) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.resource_count), value) }
+    }
+
+    #[inline(always)]
+    fn read_alias_count_field(&self) -> T {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.alias_count)) }
+    }
+
+    #[inline(always)]
+    fn write_alias_count_field(&mut self, value: T) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.alias_count), value) }
+    }
+}
+
 impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakHeader for PakHeaderV5<T> {
     #[inline]
     fn read_version(&self) -> u32 {
-        self.version
+        self.read_version_field()
     }
 
     #[inline]
     fn write_version(&mut self, version: u32) {
-        self.version = version
+        self.write_version_field(version)
     }
 
     #[inline]
     fn read_encoding(&self) -> u8 {
-        self.encoding
+        self.read_encoding_field()
     }
 
     #[inline]
     fn write_encoding(&mut self, encoding: u8) {
-        self.encoding = encoding
+        self.write_encoding_field(encoding)
     }
 
     #[inline]
     fn read_resource_count(&self) -> u32 {
-        self.resource_count.into()
+        self.read_resource_count_field().into()
     }
 
     #[inline]
     fn write_resource_count(&mut self, resource_count: u32) -> Result<(), PakError> {
-        self.resource_count = resource_count
+        let value = resource_count
             .try_into()
             .map_err(|_| PakError::PakResourceCountOutOfRange(resource_count as usize))?;
+        self.write_resource_count_field(value);
         Ok(())
     }
 
     #[inline]
     fn read_alias_count(&self) -> u32 {
-        self.alias_count.into()
+        self.read_alias_count_field().into()
     }
 
     #[inline]
     fn write_alias_count(&mut self, alias_count: u32) -> Result<(), PakError> {
-        self.alias_count = alias_count
+        let value = alias_count
             .try_into()
             .map_err(|_| PakError::PakAliasCountOutOfRange(alias_count as usize))?;
+        self.write_alias_count_field(value);
         Ok(())
     }
 
@@ -131,7 +175,7 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakHea
 
     #[inline]
     fn resource_size(&self) -> Result<usize, PakError> {
-        let resource_count: u32 = self.resource_count.into();
+        let resource_count = self.read_resource_count();
         let entry_count = checked_add_usize(
             resource_count as usize,
             1,
@@ -146,7 +190,7 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakHea
 
     #[inline]
     fn alias_size(&self) -> Result<usize, PakError> {
-        let alias_count: u32 = self.alias_count.into();
+        let alias_count = self.read_alias_count();
         checked_mul_usize(
             alias_count as usize,
             size_of::<PakAlias<T>>(),
@@ -183,9 +227,9 @@ impl PakBase for PakHeaderV4 {
         }
         let p: * mut PakHeaderV4 = buf.as_ptr() as * mut PakHeaderV4;
         let header: &PakHeaderV4 = unsafe { &*p };
-        if header.version != PAK_VERSION_V4 {
+        if header.read_version() != PAK_VERSION_V4 {
             return Err(PakError::VersionMisMatch(
-                header.version, PAK_VERSION_V4));
+                header.read_version(), PAK_VERSION_V4));
         }
         Ok(header)
     }
@@ -205,35 +249,67 @@ impl PakBase for PakHeaderV4 {
     }
 }
 
+impl PakHeaderV4 {
+    #[inline(always)]
+    fn read_version_field(&self) -> u32 {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.version)) }
+    }
+
+    #[inline(always)]
+    fn write_version_field(&mut self, value: u32) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.version), value) }
+    }
+
+    #[inline(always)]
+    fn read_resource_count_field(&self) -> u32 {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.resource_count)) }
+    }
+
+    #[inline(always)]
+    fn write_resource_count_field(&mut self, value: u32) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.resource_count), value) }
+    }
+
+    #[inline(always)]
+    fn read_encoding_field(&self) -> u8 {
+        unsafe { read_unaligned_field(std::ptr::addr_of!(self.encoding)) }
+    }
+
+    #[inline(always)]
+    fn write_encoding_field(&mut self, value: u8) {
+        unsafe { write_unaligned_field(std::ptr::addr_of_mut!(self.encoding), value) }
+    }
+}
+
 impl PakHeader for PakHeaderV4 {
     #[inline]
     fn read_version(&self) -> u32 {
-        self.version
+        self.read_version_field()
     }
 
     #[inline]
     fn write_version(&mut self, version: u32) {
-        self.version = version
+        self.write_version_field(version)
     }
 
     #[inline]
     fn read_encoding(&self) -> u8 {
-        self.encoding
+        self.read_encoding_field()
     }
 
     #[inline]
     fn write_encoding(&mut self, encoding: u8) {
-        self.encoding = encoding
+        self.write_encoding_field(encoding)
     }
 
     #[inline]
     fn read_resource_count(&self) -> u32 {
-        self.resource_count
+        self.read_resource_count_field()
     }
 
     #[inline]
     fn write_resource_count(&mut self, resource_count: u32) -> Result<(), PakError> {
-        self.resource_count = resource_count;
+        self.write_resource_count_field(resource_count);
         Ok(())
     }
 
@@ -259,7 +335,7 @@ impl PakHeader for PakHeaderV4 {
     #[inline]
     fn resource_size(&self) -> Result<usize, PakError> {
         let entry_count = checked_add_usize(
-            self.resource_count as usize,
+            self.read_resource_count() as usize,
             1,
             "resource entry count",
         )?;

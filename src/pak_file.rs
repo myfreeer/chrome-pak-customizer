@@ -27,17 +27,23 @@ pub fn pak_parse_files<'a, T: Copy + Into<u32> + Default + TryFrom<u32> + NumDig
     for _i in 0..resource_count {
         let entry = PakEntry::<T>::from_buf_offset(buf, header_offset)?;
         if let Some(last_entry) = last_entry {
-            let begin_offset = last_entry.offset as usize;
-            let end_offset = entry.offset as usize;
+            let begin_offset = last_entry.read_offset() as usize;
+            let end_offset = entry.read_offset() as usize;
             if begin_offset > end_offset {
-                return Err(PakError::PakPackResourceInvalidOffset(last_entry.offset, entry.offset));
+                return Err(PakError::PakPackResourceInvalidOffset(
+                    last_entry.read_offset(),
+                    entry.read_offset(),
+                ));
             }
             if end_offset > buf.len() {
-                return Err(PakError::PakPackResourceOffsetOverflow(entry.offset, buf.len()));
+                return Err(PakError::PakPackResourceOffsetOverflow(
+                    entry.read_offset(),
+                    buf.len(),
+                ));
             }
             let buf_slice = &buf[begin_offset..end_offset];
             let file = PakFile {
-                id: last_entry.resource_id.into(),
+                id: last_entry.read_resource_id(),
                 buf: buf_slice
             };
             vec.push(file);

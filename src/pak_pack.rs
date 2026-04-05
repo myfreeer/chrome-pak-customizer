@@ -84,10 +84,10 @@ fn pak_pack_parts<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'st
             return Err(PakPackResourceOffsetOverflow(
                 file.resource_id, resource_offset));
         }
-        resource_entries.push(PakEntry {
-            resource_id,
-            offset: resource_offset as u32,
-        });
+        let mut resource_entry = PakEntry::new();
+        resource_entry.write_resource_id(resource_id);
+        resource_entry.write_offset(resource_offset as u32);
+        resource_entries.push(resource_entry);
         resource_offset = checked_add_usize(
             resource_offset,
             file.content.len(),
@@ -97,10 +97,9 @@ fn pak_pack_parts<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'st
     if resource_offset > u32::MAX as usize {
         return Err(PakPackResourceOffsetOverflow(0, resource_offset));
     }
-    resource_entries.push(PakEntry {
-        resource_id: Default::default(),
-        offset: resource_offset as u32,
-    });
+    let mut resource_entry = PakEntry::new();
+    resource_entry.write_offset(resource_offset as u32);
+    resource_entries.push(resource_entry);
 
     Ok(PakPackParts {
         pak_index,
