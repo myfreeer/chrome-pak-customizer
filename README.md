@@ -14,7 +14,7 @@ The tool is designed for round-trip editing:
 2. edit the extracted files
 3. repack them back into a `.pak`
 
-## Build
+## Build From Source
 
 Debug build:
 
@@ -28,7 +28,42 @@ Release build:
 cargo build --release
 ```
 
+The compiled binary will be written to:
+
+- `target/debug/chrome-pak-customizer`
+- `target/release/chrome-pak-customizer`
+- `target/debug/chrome-pak-customizer.exe` on Windows
+- `target/release/chrome-pak-customizer.exe` on Windows
+
+## Use The CLI Binary
+
+If you already have a compiled binary, you do not need Rust or Cargo installed.
+
+Typical sources for a binary are:
+
+- a local build from `target/release/`
+- a CI artifact from GitHub Actions
+
+Before first use:
+
+- Linux/macOS: `chmod +x ./chrome-pak-customizer`
+- Windows: use `chrome-pak-customizer.exe`
+
+Show help:
+
+```bash
+./chrome-pak-customizer -h
+```
+
+On Windows PowerShell:
+
+```powershell
+.\chrome-pak-customizer.exe -h
+```
+
 ## Usage
+
+### Using Cargo
 
 Unpack a pak file:
 
@@ -54,6 +89,32 @@ Show help:
 ```bash
 cargo run --release -- -h
 ```
+
+### Using A Compiled Binary
+
+Linux/macOS:
+
+```bash
+./chrome-pak-customizer -u input.pak output_dir
+./chrome-pak-customizer -p output_dir/pak_index.ini output.pak
+./chrome-pak-customizer -eu input.pak output_dir
+./chrome-pak-customizer -ep output_dir/pak_index.ini output.pak
+```
+
+Windows PowerShell:
+
+```powershell
+.\chrome-pak-customizer.exe -u .\input.pak .\output_dir
+.\chrome-pak-customizer.exe -p .\output_dir\pak_index.ini .\output.pak
+.\chrome-pak-customizer.exe -eu .\input.pak .\output_dir
+.\chrome-pak-customizer.exe -ep .\output_dir\pak_index.ini .\output.pak
+```
+
+Binary users follow the same unpack/edit/repack flow:
+
+1. run `-u` or `-eu` to extract the `.pak`
+2. edit the extracted files in the output directory
+3. run `-p` or `-ep` against `pak_index.ini` to create a new `.pak`
 
 ## Unpack Output
 
