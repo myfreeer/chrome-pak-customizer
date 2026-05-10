@@ -16,8 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v5
-    - name: Install Rust 1.56.0
-      uses: dtolnay/rust-toolchain@1.56.0
+    - name: Install Rust 1.59.0
+      uses: dtolnay/rust-toolchain@1.59.0
     - name: Cargo check
       run: cargo check --locked --verbose
     - name: Cargo test

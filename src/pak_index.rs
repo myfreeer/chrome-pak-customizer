@@ -115,7 +115,7 @@ fn number_digit_count_u16(x: u16) -> usize {
     return 1;
 }
 
-pub(crate) trait NumDigits {
+pub trait NumDigits {
     fn num_digits(&self) -> usize;
 }
 
