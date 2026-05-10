@@ -10,6 +10,19 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  msrv:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust 1.56.0
+      uses: dtolnay/rust-toolchain@1.56.0
+    - name: Cargo check
+      run: cargo check --locked --verbose
+    - name: Cargo test
+      run: cargo test --locked --verbose --no-fail-fast
+
   build-linux:
 
     runs-on: ubuntu-latest

@@ -291,113 +291,126 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
                         return Err(PakError::PakIndexUnknownTag(String::from(other)));
                     }
                 },
-                Item::Property(key, value) => match status {
-                    PakIndexStatus::Init => {
-                        return Err(PakError::PakIndexUnknownProperty(
-                            status,
-                            String::from(key),
-                            String::from(value),
-                        ));
-                    }
-                    PakIndexStatus::Global => match key {
-                        PAK_INDEX_GLOBAL_VERSION => match u32::from_str(value) {
-                            Ok(value) => {
-                                if value == PAK_VERSION_V4 || value == PAK_VERSION_V5 {
-                                    version = value;
-                                } else {
-                                    return Err(PakError::UnsupportedVersion(value));
-                                }
-                            }
-                            Err(err) => {
-                                return Err(PakError::PakIndexBadVersion(
-                                    String::from(value),
-                                    err,
-                                ));
-                            }
-                        },
-                        PAK_INDEX_GLOBAL_ENCODING => match u8::from_str(value) {
-                            Ok(value) => {
-                                encoding = value;
-                            }
-                            Err(err) => {
-                                return Err(PakError::PakIndexBadEncoding(
-                                    String::from(value),
-                                    err,
-                                ));
-                            }
+                Item::Property(key, value) => {
+                    let value = match value {
+                        Some(value) => value,
+                        None => {
+                            return Err(PakError::PakIndexUnknownAction(
+                                status,
+                                String::from(key),
+                            ));
                         }
-                        _ => {
+                    };
+                    match status {
+                        PakIndexStatus::Init => {
                             return Err(PakError::PakIndexUnknownProperty(
                                 status,
                                 String::from(key),
                                 String::from(value),
                             ));
                         }
-                    },
-                    PakIndexStatus::Resource => {
-                        let resource_id = match u32::from_str(key) {
-                            Ok(num) => num,
-                            Err(err) => {
-                                return Err(PakError::PakIndexBadResourceId(
-                                    String::from(key), err));
-                            }
-                        };
-                        let _: T = convert_u32(
-                            resource_id,
-                            PakError::PakResourceIdOutOfRange,
-                        )?;
-                        let mut file_name: String = String::from(value);
-                        let compression =
-                            PakIndexCompression::of_file_name(&file_name);
-                        PakIndexCompression::strip_suffix(&mut file_name);
-                        entry_vec.push(PakIndexEntry {
-                            resource_id,
-                            file_name,
-                            compression
-                        });
-                    }
-                    PakIndexStatus::Alias => {
-                        if version == 0 {
-                            return Err(PakError::PakIndexMissingVersion);
-                        }
-                        if version == PAK_VERSION_V4 {
-                            return Err(PakError::PakIndexAliasNotSupported(version));
-                        }
-                        let resource_id = match u32::from_str(key) {
-                            Ok(num) => num,
-                            Err(err) => {
-                                return Err(PakError::PakIndexAliasBadResourceId(
+                        PakIndexStatus::Global => match key {
+                            PAK_INDEX_GLOBAL_VERSION => match u32::from_str(value) {
+                                Ok(value) => {
+                                    if value == PAK_VERSION_V4 || value == PAK_VERSION_V5 {
+                                        version = value;
+                                    } else {
+                                        return Err(PakError::UnsupportedVersion(value));
+                                    }
+                                }
+                                Err(err) => {
+                                    return Err(PakError::PakIndexBadVersion(
+                                        String::from(value),
+                                        err,
+                                    ));
+                                }
+                            },
+                            PAK_INDEX_GLOBAL_ENCODING => match u8::from_str(value) {
+                                Ok(value) => {
+                                    encoding = value;
+                                }
+                                Err(err) => {
+                                    return Err(PakError::PakIndexBadEncoding(
+                                        String::from(value),
+                                        err,
+                                    ));
+                                }
+                            },
+                            _ => {
+                                return Err(PakError::PakIndexUnknownProperty(
+                                    status,
                                     String::from(key),
-                                    String::from(value), err));
+                                    String::from(value),
+                                ));
                             }
-                        };
-                        let entry_index = match u32::from_str(value) {
-                            Ok(num) => num,
-                            Err(err) => {
-                                return Err(PakError::PakIndexAliasBadEntryIndex(
-                                    String::from(key),
-                                    String::from(value), err));
+                        },
+                        PakIndexStatus::Resource => {
+                            let resource_id = match u32::from_str(key) {
+                                Ok(num) => num,
+                                Err(err) => {
+                                    return Err(PakError::PakIndexBadResourceId(
+                                        String::from(key),
+                                        err,
+                                    ));
+                                }
+                            };
+                            let _: T = convert_u32(
+                                resource_id,
+                                PakError::PakResourceIdOutOfRange,
+                            )?;
+                            let mut file_name: String = String::from(value);
+                            let compression = PakIndexCompression::of_file_name(&file_name);
+                            PakIndexCompression::strip_suffix(&mut file_name);
+                            entry_vec.push(PakIndexEntry {
+                                resource_id,
+                                file_name,
+                                compression,
+                            });
+                        }
+                        PakIndexStatus::Alias => {
+                            if version == 0 {
+                                return Err(PakError::PakIndexMissingVersion);
                             }
-                        };
-                        let alias_resource_id = convert_u32(
-                            resource_id,
-                            PakError::PakAliasResourceIdOutOfRange,
-                        )?;
-                        let alias_entry_index = convert_u32(
-                            entry_index,
-                            PakError::PakAliasEntryIndexOutOfRange,
-                        )?;
-                        let mut alias = PakAlias::new();
-                        alias.write_resource_id(alias_resource_id);
-                        alias.write_entry_index(alias_entry_index);
-                        alias_vec.push(alias);
+                            if version == PAK_VERSION_V4 {
+                                return Err(PakError::PakIndexAliasNotSupported(version));
+                            }
+                            let resource_id = match u32::from_str(key) {
+                                Ok(num) => num,
+                                Err(err) => {
+                                    return Err(PakError::PakIndexAliasBadResourceId(
+                                        String::from(key),
+                                        String::from(value),
+                                        err,
+                                    ));
+                                }
+                            };
+                            let entry_index = match u32::from_str(value) {
+                                Ok(num) => num,
+                                Err(err) => {
+                                    return Err(PakError::PakIndexAliasBadEntryIndex(
+                                        String::from(key),
+                                        String::from(value),
+                                        err,
+                                    ));
+                                }
+                            };
+                            let alias_resource_id = convert_u32(
+                                resource_id,
+                                PakError::PakAliasResourceIdOutOfRange,
+                            )?;
+                            let alias_entry_index = convert_u32(
+                                entry_index,
+                                PakError::PakAliasEntryIndexOutOfRange,
+                            )?;
+                            let mut alias = PakAlias::new();
+                            alias.write_resource_id(alias_resource_id);
+                            alias.write_entry_index(alias_entry_index);
+                            alias_vec.push(alias);
+                        }
                     }
-                }
-                Item::Action(action) => {
-                    return Err(PakError::PakIndexUnknownAction(
-                        status, String::from(action)));
                 }
                 // ignore this?
+                Item::SectionEnd => {}
                 Item::Comment(_) => {}
                 Item::Blank => {}
             }
@@ -504,6 +517,17 @@ mod tests {
         let buf = b"[Global]\nencoding=0\n\n[Resources]\n1=1.txt\n";
         match PakIndex::<u16>::from_ini_buf(buf) {
             Err(PakError::PakIndexMissingVersion) => {}
+            other => panic!("unexpected result: {:?}", other.err()),
+        }
+    }
+
+    #[test]
+    fn from_ini_rejects_property_without_value_as_unknown_action() {
+        let buf = b"[Global]\nversion=5\nunknown\n";
+        match PakIndex::<u16>::from_ini_buf(buf) {
+            Err(PakError::PakIndexUnknownAction(PakIndexStatus::Global, action)) => {
+                assert_eq!("unknown", action);
+            }
             other => panic!("unexpected result: {:?}", other.err()),
         }
     }
