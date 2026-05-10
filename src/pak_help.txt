@@ -8,7 +8,7 @@ Pack chrome pak file using pak_index_file to destination_pak_file.
 pak_index_file would be found in unpacked path.
 
 Options:
--e Use undocumented Edge v5 pak format
+-e Force undocumented Edge v5 pak format
 -m Use memory-mapped IO for pak input when unpacking ({1})
 
 Note: existing destination files would be overwritten

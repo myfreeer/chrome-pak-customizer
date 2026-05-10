@@ -6,6 +6,7 @@ test_files=(
  chrome_100_percent_99.0.4844.51-1.pak
  chrome_200_percent_99.0.4844.51-1.pak
  en-US_99.0.4844.51-1.pak
+ msedge_100_percent.pak
  resources_99.0.4844.51-1.pak
  test_v4_474896_1.pak
  test_v4_474896_2.pak

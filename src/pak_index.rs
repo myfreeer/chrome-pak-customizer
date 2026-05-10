@@ -4,6 +4,7 @@ use ini_core::Item;
 
 use crate::pak_def::{PakAlias, PakBase};
 use crate::pak_error::PakError;
+use crate::pak_format::PakFormat;
 use crate::pak_header::{PAK_VERSION_V4, PAK_VERSION_V5, PakHeader, PakHeaderV4, PakHeaderV5};
 
 pub enum PakIndexCompression {
@@ -51,6 +52,7 @@ pub struct PakIndexRef<'a, T: Copy + Into<u32> + Default + TryFrom<u32> + NumDig
     pub header: &'a dyn PakHeader,
     pub entry_slice: &'a [PakIndexEntry],
     pub alias_slice: &'a [PakAlias<T>],
+    pub format: PakFormat,
 }
 
 pub const PAK_INDEX_GLOBAL_TAG: &str = "Global";
@@ -58,6 +60,8 @@ pub const PAK_INDEX_RES_TAG: &str = "Resources";
 pub const PAK_INDEX_ALIAS_TAG: &str = "Alias";
 pub const PAK_INDEX_GLOBAL_VERSION: &str = "version";
 pub const PAK_INDEX_GLOBAL_ENCODING: &str = "encoding";
+pub const PAK_INDEX_GLOBAL_FORMAT: &str = "format";
+pub const PAK_INDEX_FORMAT_EDGE_V5: &str = "edge-v5";
 pub const PAK_INDEX_TAG_END: &str = "]\r\n";
 pub const PAK_INDEX_CRLF: &str = "\r\n";
 
@@ -167,6 +171,10 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
         buf_size += PAK_INDEX_GLOBAL_VERSION.len() + 4;
         // 4: = \r\n + encoding number
         buf_size += PAK_INDEX_GLOBAL_ENCODING.len() + 4;
+        if self.format == PakFormat::V5Edge {
+            // 3: =\r\n
+            buf_size += PAK_INDEX_GLOBAL_FORMAT.len() + PAK_INDEX_FORMAT_EDGE_V5.len() + 3;
+        }
         if !self.alias_slice.is_empty() {
             // 8: \r\n\r\n + []\r\n
             buf_size += PAK_INDEX_ALIAS_TAG.len() + 8;
@@ -207,6 +215,13 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
         vec.push('=' as u8);
         vec.extend_from_slice(self.header.read_encoding().to_string().as_bytes());
         vec.extend_from_slice(PAK_INDEX_CRLF.as_bytes());
+        if self.format == PakFormat::V5Edge {
+            // format=edge-v5\r\n
+            vec.extend_from_slice(PAK_INDEX_GLOBAL_FORMAT.as_bytes());
+            vec.push('=' as u8);
+            vec.extend_from_slice(PAK_INDEX_FORMAT_EDGE_V5.as_bytes());
+            vec.extend_from_slice(PAK_INDEX_CRLF.as_bytes());
+        }
         // \r\n
         vec.extend_from_slice(PAK_INDEX_CRLF.as_bytes());
         // [Resources]\r\n
@@ -248,6 +263,7 @@ pub struct PakIndex<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + '
     pub header: Box<dyn PakHeader>,
     pub entry_vec: Vec<PakIndexEntry>,
     pub alias_vec: Vec<PakAlias<T>>,
+    pub format: PakFormat,
 }
 
 impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakIndex<T> {
@@ -258,6 +274,7 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
             header: self.header.as_ref(),
             entry_slice: &self.entry_vec,
             alias_slice: &self.alias_vec,
+            format: self.format,
         }
     }
 
@@ -270,6 +287,7 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
         let mut alias_vec: Vec<PakAlias<T>> = Vec::new();
         let mut version: u32 = 0;
         let mut encoding: u8 = 0;
+        let mut format = PakFormat::V5Chromium;
 
         // parsing
         for item in parser {
@@ -336,6 +354,15 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
                                     ));
                                 }
                             },
+                            PAK_INDEX_GLOBAL_FORMAT => {
+                                if value == PAK_INDEX_FORMAT_EDGE_V5 {
+                                    format = PakFormat::V5Edge;
+                                } else {
+                                    return Err(PakError::PakIndexUnknownFormat(
+                                        String::from(value),
+                                    ));
+                                }
+                            }
                             _ => {
                                 return Err(PakError::PakIndexUnknownProperty(
                                     status,
@@ -421,6 +448,15 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
             PAK_VERSION_V4 => Box::new(PakHeaderV4::new()),
             _ => return Err(PakError::PakIndexMissingVersion),
         };
+        if format == PakFormat::V5Edge && version != PAK_VERSION_V5 {
+            return Err(PakError::PakIndexFormatVersionMismatch(
+                String::from(PAK_INDEX_FORMAT_EDGE_V5),
+                version,
+            ));
+        }
+        if version == PAK_VERSION_V4 {
+            format = PakFormat::V4;
+        }
         for alias in &alias_vec {
             let entry_index = alias.read_entry_index();
             if entry_index as usize >= entry_vec.len() {
@@ -448,8 +484,82 @@ impl <T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> PakInd
             header,
             entry_vec,
             alias_vec,
+            format,
         })
     }
+}
+
+pub fn pak_index_is_edge_v5(buf: &[u8]) -> Result<bool, PakError> {
+    // SAFETY: ini_core only uses as_bytes internally, the utf8 format has no effect
+    let str: &str = unsafe { std::str::from_utf8_unchecked(buf) };
+    let parser = ini_core::Parser::new(str);
+    let mut status = PakIndexStatus::Init;
+    let mut version: u32 = 0;
+    let mut is_edge_v5 = false;
+    for item in parser {
+        match item {
+            Item::Error(err) => {
+                return Err(PakError::PakIndexParseError(String::from(err)));
+            }
+            Item::Section(section) => match section {
+                PAK_INDEX_GLOBAL_TAG => {
+                    status = PakIndexStatus::Global;
+                }
+                PAK_INDEX_RES_TAG => {
+                    status = PakIndexStatus::Resource;
+                }
+                PAK_INDEX_ALIAS_TAG => {
+                    status = PakIndexStatus::Alias;
+                }
+                other => {
+                    return Err(PakError::PakIndexUnknownTag(String::from(other)));
+                }
+            },
+            Item::Property(key, value) => {
+                if !matches!(status, PakIndexStatus::Global) {
+                    continue;
+                }
+                let value = match value {
+                    Some(value) => value,
+                    None => {
+                        return Err(PakError::PakIndexUnknownAction(
+                            status,
+                            String::from(key),
+                        ));
+                    }
+                };
+                match key {
+                    PAK_INDEX_GLOBAL_VERSION => {
+                        version = u32::from_str(value)
+                            .map_err(|err| PakError::PakIndexBadVersion(
+                                String::from(value),
+                                err,
+                            ))?;
+                    }
+                    PAK_INDEX_GLOBAL_FORMAT => {
+                        if value == PAK_INDEX_FORMAT_EDGE_V5 {
+                            is_edge_v5 = true;
+                        } else {
+                            return Err(PakError::PakIndexUnknownFormat(
+                                String::from(value),
+                            ));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Item::SectionEnd => {}
+            Item::Comment(_) => {}
+            Item::Blank => {}
+        }
+    }
+    if is_edge_v5 && version != PAK_VERSION_V5 {
+        return Err(PakError::PakIndexFormatVersionMismatch(
+            String::from(PAK_INDEX_FORMAT_EDGE_V5),
+            version,
+        ));
+    }
+    Ok(is_edge_v5)
 }
 
 #[cfg(test)]
@@ -539,6 +649,41 @@ mod tests {
             Err(PakError::PakAliasEntryIndexOutOfBounds(2, 1)) => {}
             other => panic!("unexpected result: {:?}", other.err()),
         }
+    }
+
+    #[test]
+    fn from_ini_accepts_edge_v5_format_marker_for_u32() {
+        let buf = b"[Global]\nversion=5\nencoding=0\nformat=edge-v5\n\n[Resources]\n1=1.txt\n";
+        let index = PakIndex::<u32>::from_ini_buf(buf).unwrap();
+        assert_eq!(index.format, PakFormat::V5Edge);
+    }
+
+    #[test]
+    fn from_ini_rejects_unknown_format_marker() {
+        let buf = b"[Global]\nversion=5\nencoding=0\nformat=edge\n\n[Resources]\n1=1.txt\n";
+        match PakIndex::<u32>::from_ini_buf(buf) {
+            Err(PakError::PakIndexUnknownFormat(format)) => {
+                assert_eq!(format, "edge");
+            }
+            other => panic!("unexpected result: {:?}", other.err()),
+        }
+    }
+
+    #[test]
+    fn from_ini_rejects_edge_v5_format_marker_for_v4() {
+        let buf = b"[Global]\nversion=4\nencoding=0\nformat=edge-v5\n\n[Resources]\n1=1.txt\n";
+        match PakIndex::<u32>::from_ini_buf(buf) {
+            Err(PakError::PakIndexFormatVersionMismatch(format, 4)) => {
+                assert_eq!(format, PAK_INDEX_FORMAT_EDGE_V5);
+            }
+            other => panic!("unexpected result: {:?}", other.err()),
+        }
+    }
+
+    #[test]
+    fn pak_index_is_edge_v5_reads_format_marker_without_resource_validation() {
+        let buf = b"[Global]\nversion=5\nencoding=0\nformat=edge-v5\n\n[Resources]\n65536=65536.txt\n";
+        assert!(pak_index_is_edge_v5(buf).unwrap());
     }
 
 }

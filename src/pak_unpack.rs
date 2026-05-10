@@ -11,6 +11,7 @@ use crate::pak_error::PakError::{
     PakUnpackPathNotExists,
     PakWriteIndexFileFail
 };
+use crate::pak_format::{pak_format_from_buf, PakFormat};
 use crate::pak_file::pak_parse_files;
 use crate::pak_file_io::pak_write_file;
 use crate::pak_header::{pak_read_header, PakHeader};
@@ -62,6 +63,8 @@ pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String, edge_v5: bool) ->
         }
     }
 
+    let format = pak_format_from_buf(pak_buf, edge_v5)?;
+    let edge_v5 = format == PakFormat::V5Edge;
     let header = pak_read_header(pak_buf, edge_v5)?;
     let files = if edge_v5 {
         pak_parse_files::<u32>(header, pak_buf)
@@ -75,9 +78,9 @@ pub fn pak_unpack_buf(pak_buf: &[u8], output_path_str: String, edge_v5: bool) ->
     }
 
     if edge_v5 {
-        pak_write_index::<u32>(header, pak_buf, entry_vec, &output_path_str)
+        pak_write_index::<u32>(header, pak_buf, entry_vec, format, &output_path_str)
     } else {
-        pak_write_index::<u16>(header, pak_buf, entry_vec, &output_path_str)
+        pak_write_index::<u16>(header, pak_buf, entry_vec, format, &output_path_str)
     }
 }
 
@@ -85,6 +88,7 @@ fn pak_write_index<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 's
     header: & dyn PakHeader,
     pak_buf: &[u8],
     entry_vec: Vec<PakIndexEntry>,
+    format: PakFormat,
     output_path_str: &String
 ) -> Result<(), PakError> {
 
@@ -94,6 +98,7 @@ fn pak_write_index<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 's
         header,
         entry_slice: &entry_vec,
         alias_slice,
+        format,
     };
 
     let mut index_path_str = output_path_str.clone();
@@ -211,6 +216,41 @@ mod tests {
             Err(PakError::PakUnpackPakMapReadError(_, _))
         ));
         assert!(!output_dir.exists());
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn pak_unpack_path_auto_writes_edge_v5_format_marker() {
+        let dir = unique_temp_dir("unpack-edge-v5-auto");
+        let out_dir = dir.join("out");
+        let pak_path = dir.join("edge.pak");
+        fs::create_dir_all(&dir).unwrap();
+
+        fs::write(
+            &pak_path,
+            [
+                5, 0, 0, 0, // version
+                0, // encoding
+                0, 0, 0, // padding
+                1, 0, 0, 0, // resource count
+                0, 0, 0, 0, // alias count
+                1, 0, 0, 0, 32, 0, 0, 0, // resource id 1, offset 32
+                0, 0, 0, 0, 37, 0, 0, 0, // final entry, end offset 37
+                b'h', b'e', b'l', b'l', b'o',
+            ],
+        ).unwrap();
+
+        pak_unpack_path(
+            pak_path.to_string_lossy().into_owned(),
+            out_dir.to_string_lossy().into_owned(),
+            false,
+            false,
+        ).unwrap();
+
+        let index = fs::read_to_string(out_dir.join(PAK_INDEX_INI)).unwrap();
+        assert!(index.contains("format=edge-v5"));
+        assert_eq!(fs::read(out_dir.join("1")).unwrap(), b"hello");
 
         fs::remove_dir_all(&dir).unwrap();
     }

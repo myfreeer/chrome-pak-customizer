@@ -6,6 +6,7 @@ use crate::pak_pack::pak_pack_index_path;
 use crate::pak_unpack::pak_unpack_path;
 
 mod pak_mmap;
+mod pak_format;
 mod pak_def;
 mod pak_error;
 mod pak_header;

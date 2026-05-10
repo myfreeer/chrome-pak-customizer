@@ -12,7 +12,7 @@ use crate::pak_error::PakError::{
     PakReadIndexFileFail
 };
 use crate::pak_file_io::{PakFileContent, pak_read_files};
-use crate::pak_index::NumDigits;
+use crate::pak_index::{pak_index_is_edge_v5, NumDigits};
 use crate::PakIndex;
 
 struct PakPackParts<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 'static> {
@@ -36,7 +36,7 @@ pub fn pak_pack_index_path(
             return Err(PakReadIndexFileFail(index_path_str, err));
         }
     };
-    if edge_v5 {
+    if edge_v5 || pak_index_is_edge_v5(&index_file)? {
         pak_pack_index_path_impl::<u32>(&index_file, index_dir, output_path)
     } else {
         pak_pack_index_path_impl::<u16>(&index_file, index_dir, output_path)
@@ -194,6 +194,40 @@ mod tests {
         ).unwrap();
         let file_bytes = fs::read(&output_path).unwrap();
         assert_eq!(file_bytes, vec);
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn pak_pack_index_path_uses_edge_v5_marker_without_flag() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "chrome-pak-customizer-pack-edge-{0}-{1}",
+            std::process::id(),
+            unique,
+        ));
+        fs::create_dir_all(&dir).unwrap();
+
+        let index_path = dir.join("pak_index.ini");
+        let output_path = dir.join("out.pak");
+        fs::write(dir.join("1.txt"), b"hello").unwrap();
+        fs::write(
+            &index_path,
+            b"[Global]\nversion=5\nencoding=0\nformat=edge-v5\n\n[Resources]\n1=1.txt\n",
+        ).unwrap();
+
+        pak_pack_index_path(
+            index_path.to_string_lossy().into_owned(),
+            output_path.to_string_lossy().into_owned(),
+            false,
+        ).unwrap();
+        let pak = fs::read(&output_path).unwrap();
+        assert_eq!(&pak[0..4], &[5, 0, 0, 0]);
+        assert_eq!(&pak[8..12], &[1, 0, 0, 0]);
+        assert_eq!(&pak[12..16], &[0, 0, 0, 0]);
 
         fs::remove_dir_all(&dir).unwrap();
     }

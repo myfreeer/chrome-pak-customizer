@@ -43,12 +43,15 @@ pub enum PakError {
     // encoding str, err
     PakIndexBadEncoding(String, ParseIntError),
     PakIndexBadResourceId(String, ParseIntError),
+    PakIndexUnknownFormat(String),
+    PakIndexFormatVersionMismatch(String, u32),
     // version
     PakIndexAliasNotSupported(u32),
     PakResourceIdOutOfRange(u32),
     PakAliasResourceIdOutOfRange(u32),
     PakAliasEntryIndexOutOfRange(u32),
     PakAliasEntryIndexOutOfBounds(u32, u32),
+    PakFormatAmbiguousV5,
     PakResourceCountOutOfRange(usize),
     PakAliasCountOutOfRange(usize),
     // key, value, err
