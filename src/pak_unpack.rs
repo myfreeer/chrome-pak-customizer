@@ -6,6 +6,7 @@ use crate::pak_error::PakError;
 use crate::pak_error::PakError::{
     PakUnpackCanNotCreateOutputPath,
     PakUnpackOutputPathNotDir,
+    PakUnpackPakMapReadError,
     PakUnpackPakReadError,
     PakUnpackPathNotExists,
     PakWriteIndexFileFail
@@ -17,10 +18,27 @@ use crate::pak_index::{NumDigits, PakIndexEntry, PakIndexRef};
 
 pub const PAK_INDEX_INI: &str = "pak_index.ini";
 
-pub fn pak_unpack_path(pak_path_str: String, output_path: String, edge_v5: bool) -> Result<(), PakError> {
+pub fn pak_unpack_path(
+    pak_path_str: String,
+    output_path: String,
+    edge_v5: bool,
+    mmap: bool,
+) -> Result<(), PakError> {
     let pak_path = Path::new(&pak_path_str);
     if !pak_path.exists() {
         return Err(PakUnpackPathNotExists(pak_path_str));
+    }
+    if mmap && !crate::pak_mmap::MMAP_AVAILABLE {
+        eprintln!("Warning: memory-mapped IO is not supported on this target; using buffered IO");
+    }
+    if mmap && crate::pak_mmap::MMAP_AVAILABLE {
+        let metadata = fs::metadata(pak_path)
+            .map_err(|err| PakUnpackPakReadError(pak_path_str.clone(), err))?;
+        if metadata.len() > 0 {
+            let map = crate::pak_mmap::map_read_only(pak_path)
+                .map_err(|err| PakUnpackPakMapReadError(pak_path_str, err))?;
+            return pak_unpack_buf(&map, output_path, edge_v5);
+        }
     }
     let vec = fs::read(pak_path)
         .map_err(|err|  PakUnpackPakReadError(pak_path_str, err))?;
@@ -84,4 +102,116 @@ fn pak_write_index<T: Copy + Into<u32> + Default + TryFrom<u32> + NumDigits + 's
 
     fs::write(Path::new(&index_path_str), index.to_ini_bytes())
         .map_err(|err| PakWriteIndexFileFail(index_path_str, err))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use super::*;
+
+    fn unique_temp_dir(name: &str) -> std::path::PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "chrome-pak-customizer-{0}-{1}-{2}",
+            name,
+            std::process::id(),
+            unique,
+        ))
+    }
+
+    #[test]
+    fn pak_unpack_path_with_mmap_matches_buffered_output() {
+        let dir = unique_temp_dir("unpack-mmap");
+        let buffered_dir = dir.join("buffered");
+        let mmap_dir = dir.join("mmap");
+        let pak_path = dir.join("test.pak");
+        fs::create_dir_all(&dir).unwrap();
+
+        fs::write(
+            &pak_path,
+            [
+                4, 0, 0, 0, // version
+                1, 0, 0, 0, // resource count
+                0, // encoding
+                1, 0, 21, 0, 0, 0, // resource id 1, offset 21
+                0, 0, 26, 0, 0, 0, // final entry, end offset 26
+                b'h', b'e', b'l', b'l', b'o',
+            ],
+        ).unwrap();
+
+        pak_unpack_path(
+            pak_path.to_string_lossy().into_owned(),
+            buffered_dir.to_string_lossy().into_owned(),
+            false,
+            false,
+        ).unwrap();
+        pak_unpack_path(
+            pak_path.to_string_lossy().into_owned(),
+            mmap_dir.to_string_lossy().into_owned(),
+            false,
+            true,
+        ).unwrap();
+
+        assert_eq!(fs::read(buffered_dir.join("1")).unwrap(), b"hello");
+        assert_eq!(fs::read(mmap_dir.join("1")).unwrap(), b"hello");
+        assert_eq!(
+            fs::read(buffered_dir.join(PAK_INDEX_INI)).unwrap(),
+            fs::read(mmap_dir.join(PAK_INDEX_INI)).unwrap(),
+        );
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn pak_unpack_path_with_mmap_preserves_zero_length_parser_error() {
+        let dir = unique_temp_dir("unpack-mmap-empty");
+        let output_dir = dir.join("out");
+        let pak_path = dir.join("empty.pak");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(&pak_path, []).unwrap();
+
+        let result = pak_unpack_path(
+            pak_path.to_string_lossy().into_owned(),
+            output_dir.to_string_lossy().into_owned(),
+            false,
+            true,
+        );
+
+        assert!(matches!(
+            result,
+            Err(PakError::VersionSizeNotEnough(0, 4))
+        ));
+        assert!(output_dir.is_dir());
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn pak_unpack_path_with_mmap_returns_map_error_for_directory_input() {
+        let dir = unique_temp_dir("unpack-mmap-map-error");
+        let pak_path = dir.join("input-dir");
+        let output_dir = dir.join("out");
+        fs::create_dir_all(&pak_path).unwrap();
+
+        let result = pak_unpack_path(
+            pak_path.to_string_lossy().into_owned(),
+            output_dir.to_string_lossy().into_owned(),
+            false,
+            true,
+        );
+
+        assert!(matches!(
+            result,
+            Err(PakError::PakUnpackPakMapReadError(_, _))
+        ));
+        assert!(!output_dir.exists());
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
 }

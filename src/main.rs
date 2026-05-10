@@ -5,6 +5,7 @@ use crate::pak_index::PakIndex;
 use crate::pak_pack::pak_pack_index_path;
 use crate::pak_unpack::pak_unpack_path;
 
+mod pak_mmap;
 mod pak_def;
 mod pak_error;
 mod pak_header;
@@ -20,13 +21,18 @@ mod pak_brotli;
 fn print_help(args: &PakArgs) {
     let default_name = String::from("pak");
     let self_name = args.self_name.as_ref().unwrap_or(&default_name);
+    let mmap_availability = if crate::pak_mmap::MMAP_AVAILABLE {
+        "available"
+    } else {
+        "unavailable"
+    };
     match args.command {
         PakCommand::Unknown => println!("Unknown command"),
         PakCommand::Help => {}
         PakCommand::Pack => println!("Incomplete pack arguments"),
         PakCommand::Unpack => println!("Incomplete unpack arguments")
     }
-    println!(include_str!("pak_help.txt"), self_name);
+    println!(include_str!("pak_help.txt"), self_name, mmap_availability);
 }
 
 fn main() {
@@ -58,7 +64,8 @@ fn main() {
             if let Err(err) = pak_unpack_path(
                 args.input_path.unwrap(),
                 args.output_path.unwrap(),
-                args.edge_v5) {
+                args.edge_v5,
+                args.mmap) {
                 println!("Error unpacking: {:?}", err);
                 exit(1);
             } else {

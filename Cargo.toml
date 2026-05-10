@@ -10,6 +10,11 @@ license = "MIT"
 [dependencies]
 ini_core = "0.2.0"
 brotli-decompressor = "5"
+memmap2 = "=0.5.10"
+
+[target.'cfg(unix)'.dependencies]
+# Keep memmap2's Unix syscall dependency inside this repo's Rust 1.59 MSRV.
+libc = "=0.2.147"
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.

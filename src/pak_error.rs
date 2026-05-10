@@ -58,6 +58,7 @@ pub enum PakError {
     PakIndexUnknownAction(PakIndexStatus, String),
     PakUnpackPathNotExists(String),
     PakUnpackPakReadError(String, Error),
+    PakUnpackPakMapReadError(String, Error),
     PakUnpackOutputPathNotDir(String),
     PakUnpackCanNotCreateOutputPath(String, Error),
     PakWriteIndexFileFail(String, Error),
